@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuthStore } from '../store/auth';
-import { ApiError } from '../api/client';
+import { ApiError, pingBackend } from '../api/client';
 import '../styles/login.css';
 
 type Tab = 'email' | 'phone' | 'github' | 'wechat';
@@ -15,7 +15,7 @@ export default function LoginPage() {
 
   const [tab, setTab] = useState<Tab>('email');
   const [mode, setMode] = useState<Mode>('login');
-  const [account, setAccount] = useState('admin');
+  const [account, setAccount] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -23,6 +23,17 @@ export default function LoginPage() {
   const [agree, setAgree] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [backendUp, setBackendUp] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    pingBackend().then((ok) => {
+      if (alive) setBackendUp(ok);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,13 +45,33 @@ export default function LoginPage() {
     setBusy(true);
     try {
       if (mode === 'login') {
+        if (!account.trim() || !password) {
+          setErr('请输入账号和密码');
+          return;
+        }
         await login(account.trim(), password);
       } else {
-        await register({ username: username.trim(), email: email.trim(), password, nickname: nickname.trim() || undefined });
+        if (!username.trim() || !email.trim() || password.length < 8) {
+          setErr('用户名、邮箱必填，密码至少 8 位');
+          return;
+        }
+        await register({
+          username: username.trim(),
+          email: email.trim(),
+          password,
+          nickname: nickname.trim() || undefined,
+        });
       }
       navigate('/home');
     } catch (e2) {
-      setErr(e2 instanceof ApiError ? e2.message : '登录失败，请稍后重试');
+      console.error('[login]', e2);
+      if (e2 instanceof ApiError) {
+        setErr(e2.message);
+      } else if (e2 instanceof Error) {
+        setErr(e2.message || '请求失败，请稍后重试');
+      } else {
+        setErr('请求失败，请稍后重试');
+      }
     } finally {
       setBusy(false);
     }
@@ -61,27 +92,85 @@ export default function LoginPage() {
             </div>
             <h2 className="login-title">{mode === 'login' ? '欢迎回来' : '创建新账号'}</h2>
             <p className="login-sub">
-              {mode === 'login' ? '登录后可收藏文章、发表评论、参与社区贡献' : '免费注册，立即开始发表你的第一篇文章'}
+              {mode === 'login'
+                ? '登录后可收藏文章、发表评论、参与社区贡献'
+                : '免费注册，立即开始发表你的第一篇文章'}
             </p>
 
+            {backendUp === false && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: '10px 12px',
+                  background: 'rgba(184,136,36,0.08)',
+                  border: '1px solid rgba(184,136,36,0.3)',
+                  color: 'var(--warning)',
+                  borderRadius: 'var(--r-md)',
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                }}
+              >
+                检测不到后端服务。请在项目根目录启动：
+                <code style={{ display: 'block', marginTop: 6, fontFamily: 'var(--font-mono)' }}>
+                  cd backend &amp;&amp; mvn -DskipTests package
+                  <br />
+                  java -jar ch-web/target/ch-web.jar --spring.profiles.active=dev
+                </code>
+              </div>
+            )}
+
             <div className="login-tabs">
-              <button type="button" className={`login-tab${tab === 'email' ? ' on' : ''}`} onClick={() => setTab('email')}>邮箱</button>
-              <button type="button" className={`login-tab${tab === 'phone' ? ' on' : ''}`} onClick={() => setTab('phone')}>手机号</button>
-              <button type="button" className={`login-tab${tab === 'github' ? ' on' : ''}`} onClick={() => setTab('github')}>GitHub</button>
-              <button type="button" className={`login-tab${tab === 'wechat' ? ' on' : ''}`} onClick={() => setTab('wechat')}>微信扫码</button>
+              <button
+                type="button"
+                className={`login-tab${tab === 'email' ? ' on' : ''}`}
+                onClick={() => setTab('email')}
+              >
+                邮箱
+              </button>
+              <button
+                type="button"
+                className={`login-tab${tab === 'phone' ? ' on' : ''}`}
+                onClick={() => setTab('phone')}
+              >
+                手机号
+              </button>
+              <button
+                type="button"
+                className={`login-tab${tab === 'github' ? ' on' : ''}`}
+                onClick={() => setTab('github')}
+              >
+                GitHub
+              </button>
+              <button
+                type="button"
+                className={`login-tab${tab === 'wechat' ? ' on' : ''}`}
+                onClick={() => setTab('wechat')}
+              >
+                微信扫码
+              </button>
             </div>
 
             {tab === 'email' && (
-              <form onSubmit={onSubmit}>
+              <form onSubmit={onSubmit} noValidate>
                 {mode === 'register' && (
                   <>
                     <div className="login-field">
                       <label>用户名</label>
-                      <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="3-32 位，字母或数字" required />
+                      <input
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="3-32 位，字母或数字"
+                        autoComplete="username"
+                        required
+                      />
                     </div>
                     <div className="login-field">
                       <label>昵称（可选）</label>
-                      <input value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder="展示在文章与评论里的名字" />
+                      <input
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        placeholder="展示在文章与评论里的名字"
+                      />
                     </div>
                   </>
                 )}
@@ -90,8 +179,13 @@ export default function LoginPage() {
                   <input
                     type={mode === 'register' ? 'email' : 'text'}
                     value={mode === 'register' ? email : account}
-                    onChange={(e) => (mode === 'register' ? setEmail(e.target.value) : setAccount(e.target.value))}
-                    placeholder={mode === 'register' ? 'you@example.com' : 'admin / you@example.com'}
+                    onChange={(e) =>
+                      mode === 'register' ? setEmail(e.target.value) : setAccount(e.target.value)
+                    }
+                    placeholder={
+                      mode === 'register' ? 'you@example.com' : '首次部署：admin'
+                    }
+                    autoComplete={mode === 'register' ? 'email' : 'username'}
                     required
                   />
                 </div>
@@ -101,34 +195,83 @@ export default function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="至少 8 位，含字母与数字"
+                    placeholder={mode === 'register' ? '至少 8 位，含字母与数字' : '首次部署默认：ChangeMe123!'}
+                    autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                     required
                     minLength={8}
                   />
                 </div>
                 {mode === 'login' && (
                   <div className="login-row-between">
-                    <label><input type="checkbox" defaultChecked /> 记住我</label>
-                    <a href="#">忘记密码？</a>
+                    <label>
+                      <input type="checkbox" defaultChecked /> 记住我
+                    </label>
+                    <a href="#" onClick={(e) => e.preventDefault()}>
+                      忘记密码？
+                    </a>
                   </div>
                 )}
                 <div className="login-check">
-                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />{' '}
+                  <input
+                    type="checkbox"
+                    checked={agree}
+                    onChange={(e) => setAgree(e.target.checked)}
+                  />{' '}
                   我已阅读并同意 <a href="#">《社区公约》</a> 与 <a href="#">《隐私政策》</a>
                 </div>
                 {err && (
-                  <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(178,70,63,0.08)', border: '1px solid rgba(178,70,63,0.25)', color: 'var(--danger)', borderRadius: 'var(--r-md)', fontSize: 13 }}>
+                  <div
+                    role="alert"
+                    style={{
+                      marginBottom: 12,
+                      padding: '10px 12px',
+                      background: 'rgba(178,70,63,0.08)',
+                      border: '1px solid rgba(178,70,63,0.25)',
+                      color: 'var(--danger)',
+                      borderRadius: 'var(--r-md)',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
                     {err}
                   </div>
                 )}
-                <button type="submit" className="btn btn-primary btn-submit" disabled={busy}>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-submit"
+                  disabled={busy}
+                >
                   {busy ? '正在提交…' : mode === 'login' ? '登录' : '注册并登录'}
                 </button>
                 <p className="foot-link">
                   {mode === 'login' ? (
-                    <>还没有账号？<a href="#" onClick={(e) => { e.preventDefault(); setMode('register'); setErr(null); }}>立即注册</a></>
+                    <>
+                      还没有账号？
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setMode('register');
+                          setErr(null);
+                        }}
+                      >
+                        立即注册
+                      </a>
+                    </>
                   ) : (
-                    <>已有账号？<a href="#" onClick={(e) => { e.preventDefault(); setMode('login'); setErr(null); }}>去登录</a></>
+                    <>
+                      已有账号？
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setMode('login');
+                          setErr(null);
+                        }}
+                      >
+                        去登录
+                      </a>
+                    </>
                   )}
                 </p>
               </form>
@@ -142,16 +285,29 @@ export default function LoginPage() {
 
             {tab === 'github' && (
               <div style={{ padding: '24px 0 12px', textAlign: 'center' }}>
-                <div style={{ padding: '32px 0', background: 'var(--surface-2)', borderRadius: 'var(--r-md)', border: '1px dashed var(--line)' }}>
-                  <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 14px' }}>GitHub OAuth 需在系统设置中配置 Client ID / Secret 后启用。</p>
-                  <Link className="btn btn-secondary" to="/home">返回首页</Link>
+                <div
+                  style={{
+                    padding: '32px 0',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--r-md)',
+                    border: '1px dashed var(--line)',
+                  }}
+                >
+                  <p style={{ fontSize: 13, color: 'var(--ink-2)', margin: '0 0 14px' }}>
+                    GitHub OAuth 需在系统设置中配置 Client ID / Secret 后启用。
+                  </p>
+                  <Link className="btn btn-secondary" to="/home">
+                    返回首页
+                  </Link>
                 </div>
               </div>
             )}
 
             {tab === 'wechat' && (
               <div className="qr-box">
-                <div className="qr"><div className="qr-grid" /></div>
+                <div className="qr">
+                  <div className="qr-grid" />
+                </div>
                 <p className="qr-hint">
                   打开 <b>微信</b> 扫一扫（需先在系统配置中接入微信开放平台）
                 </p>
