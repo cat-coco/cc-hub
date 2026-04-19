@@ -1,0 +1,52 @@
+.proto-head { padding: 96px 0 32px; }
+.proto-eyebrow {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--brand); letter-spacing: 0.16em; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.proto-head h1 {
+  font-size: var(--fs-52); margin: 0; letter-spacing: -0.02em;
+  line-height: 1.08; font-weight: 600; max-width: 880px;
+}
+.proto-head p {
+  color: var(--ink-2); margin: 16px 0 0; max-width: 640px;
+  font-size: var(--fs-17); line-height: 1.7;
+}
+.proto-meta {
+  margin-top: 32px; display: flex; gap: 24px;
+  font-size: var(--fs-13); color: var(--ink-3);
+  padding: 16px 20px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  font-family: var(--font-mono);
+}
+.proto-meta span b { color: var(--ink); font-weight: 600; }
+
+.proto-section-title {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-3);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  margin: 72px 0 28px;
+}
+.proto-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+.pcard {
+  padding: 20px 22px 22px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); text-decoration: none; color: inherit;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  display: flex; flex-direction: column; gap: 10px;
+  min-height: 132px;
+}
+.pcard:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--line-2); }
+.pcard-num {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--ink-4); letter-spacing: 0.08em;
+}
+.pcard-title { font-size: var(--fs-18); font-weight: 600; letter-spacing: -0.01em; }
+.pcard-desc { font-size: var(--fs-13); color: var(--ink-3); line-height: 1.6; }
+.pcard-tag {
+  margin-top: auto; font-family: var(--font-mono); font-size: 11px;
+  color: var(--brand); align-self: flex-start;
+  padding-top: 10px;
+}

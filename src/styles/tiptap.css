@@ -1,0 +1,37 @@
+.tiptap-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+}
+
+.tiptap-content {
+  outline: none;
+  padding: 28px 40px 60px;
+  max-width: 780px;
+  margin: 0 auto;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink);
+  flex: 1;
+}
+
+.tiptap-content p { margin: 0 0 18px; }
+.tiptap-content h1 { font-size: 30px; margin: 0 0 14px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.tiptap-content h2 { font-size: 22px; margin: 36px 0 12px; font-weight: 600; letter-spacing: -0.01em; }
+.tiptap-content h3 { font-size: 18px; margin: 28px 0 10px; font-weight: 600; }
+.tiptap-content ul, .tiptap-content ol { padding-left: 22px; margin: 0 0 18px; }
+.tiptap-content li { margin-bottom: 5px; }
+.tiptap-content blockquote { margin: 20px 0; padding: 2px 0 2px 16px; border-left: 2px solid var(--brand); color: var(--ink-2); }
+.tiptap-content code:not(pre code) { font-family: var(--font-mono); font-size: 0.88em; padding: 2px 6px; background: var(--surface-sunk); border: 1px solid var(--line); border-radius: 3px; color: var(--brand-ink); }
+.tiptap-content pre { margin: 20px 0; padding: 14px 18px; background: var(--surface-sunk); border: 1px solid var(--line); border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 13px; line-height: 1.65; overflow-x: auto; }
+.tiptap-content a { color: var(--brand); border-bottom: 1px solid rgba(181,74,58,0.3); }
+.tiptap-content hr { border: none; border-top: 1px solid var(--line); margin: 32px 0; }
+
+.tiptap-content p.is-editor-empty:first-child::before {
+  color: var(--ink-4);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

@@ -1,0 +1,74 @@
+body.admin-body { background: var(--surface-2); }
+
+.admin-layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+.admin-aside {
+  background: var(--surface); border-right: 1px solid var(--line);
+  padding: 20px 14px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.admin-aside .brand { padding: 4px 8px 20px; border-bottom: 1px solid var(--line); margin-bottom: 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; font-weight: 600; letter-spacing: -0.01em; font-size: 16px; }
+.admin-aside .brand-mark { width: 26px; height: 26px; border-radius: var(--r-sm); background: var(--brand); position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.admin-aside .brand-mark::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--surface); transform: rotate(45deg); }
+.amenu-group { font-size: 11px; color: var(--ink-4); text-transform: uppercase; letter-spacing: 0.1em; padding: 14px 10px 6px; }
+.amenu a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); font-size: var(--fs-13); color: var(--ink-2); transition: all var(--dur) var(--ease); font-weight: 500; text-decoration: none; }
+.amenu a:hover { background: var(--surface-2); color: var(--ink); }
+.amenu a.on { background: var(--brand-subtle); color: var(--brand-ink); }
+.amenu a .n { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); }
+.amenu a.on .n { color: var(--brand); }
+.aside-foot { margin-top: auto; padding: 14px 10px; border-top: 1px solid var(--line); display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); background: var(--surface); }
+.aside-foot .ava { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-subtle); color: var(--brand-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+
+.amain { padding: 0; min-width: 0; }
+.atop { height: 56px; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 28px; gap: 20px; position: sticky; top: 0; z-index: 10; }
+.admin-crumb { font-size: var(--fs-13); color: var(--ink-3); }
+.admin-crumb b { color: var(--ink); font-weight: 500; }
+.atop-search { height: 32px; width: 240px; padding: 0 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); font-size: 13px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.atop-ico { width: 32px; height: 32px; border-radius: var(--r-md); display: inline-flex; align-items: center; justify-content: center; color: var(--ink-3); background: transparent; border: none; cursor: pointer; font-family: inherit; }
+.atop-ico:hover { background: var(--surface-2); color: var(--ink); }
+.atop-ico-wrap { position: relative; }
+.atop-ico-dot { position: absolute; width: 7px; height: 7px; background: var(--brand); border-radius: 50%; top: 2px; right: 2px; }
+
+.acontent { padding: 28px; }
+.aheader { display: flex; align-items: baseline; margin-bottom: 24px; }
+.aheader h1 { font-size: var(--fs-24); margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+.aheader .sub { color: var(--ink-3); font-size: 13px; margin-left: 12px; }
+.aheader .range { margin-left: auto; display: flex; gap: 6px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat { padding: 20px 22px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.stat-lbl { font-size: var(--fs-13); color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.stat-lbl .ic { width: 14px; height: 14px; color: var(--ink-4); }
+.stat-num { font-size: 32px; font-weight: 600; letter-spacing: -0.02em; margin: 10px 0 4px; font-feature-settings: "tnum" 1; font-family: var(--font-mono); }
+.stat-delta { font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.delta-up { color: var(--success); }
+.delta-down { color: var(--danger); }
+.stat-sub { font-size: 12px; color: var(--ink-3); margin-left: 6px; }
+
+.grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 22px 24px; }
+.panel-h { display: flex; align-items: baseline; margin-bottom: 18px; }
+.panel-h h3 { font-size: var(--fs-15); font-weight: 600; margin: 0; }
+.panel-h .muted { margin-left: 10px; color: var(--ink-3); font-size: 12px; font-family: var(--font-mono); }
+.panel-h .right { margin-left: auto; display: flex; gap: 4px; }
+
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--ink-3); align-items: center; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+
+.atable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.atable th { text-align: left; font-weight: 500; color: var(--ink-3); padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.atable th:first-child { border-top-left-radius: var(--r-sm); }
+.atable th:last-child { border-top-right-radius: var(--r-sm); }
+.atable td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.atable tr:last-child td { border-bottom: none; }
+.atable tr:hover td { background: var(--surface-2); }
+.rank { font-family: var(--font-mono); color: var(--ink-4); width: 32px; }
+.rank.top { color: var(--brand); }
+.trend { display: inline-block; width: 60px; height: 18px; }
+.num-cell { font-family: var(--font-mono); font-feature-settings: "tnum" 1; text-align: right; color: var(--ink-2); }
+
+.pie-wrap { display: flex; align-items: center; gap: 28px; }
+.pie-legend { flex: 1; }
+.pie-item { display: flex; align-items: center; padding: 6px 0; font-size: 13px; }
+.pie-item .dot { width: 10px; height: 10px; border-radius: 2px; margin-right: 10px; }
+.pie-item .pct { margin-left: auto; font-family: var(--font-mono); color: var(--ink-2); font-size: 12px; font-feature-settings: "tnum" 1; }

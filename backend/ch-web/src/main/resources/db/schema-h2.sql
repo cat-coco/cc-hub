@@ -1,0 +1,226 @@
+-- H2 dev schema: mirrors MySQL schema but drops FULLTEXT and JSON features.
+CREATE TABLE IF NOT EXISTS `user` (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(32) NOT NULL UNIQUE,
+  nickname VARCHAR(64),
+  avatar VARCHAR(255),
+  email VARCHAR(128),
+  phone VARCHAR(32),
+  password_hash VARCHAR(100),
+  bio VARCHAR(500),
+  github_id VARCHAR(64),
+  wechat_openid VARCHAR(64),
+  status INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_profile (
+  user_id BIGINT PRIMARY KEY,
+  followers_count INT NOT NULL DEFAULT 0,
+  following_count INT NOT NULL DEFAULT 0,
+  article_count INT NOT NULL DEFAULT 0,
+  `level` INT NOT NULL DEFAULT 1,
+  points INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS role (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(32) NOT NULL UNIQUE,
+  name VARCHAR(64) NOT NULL,
+  description VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS permission (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(64) NOT NULL UNIQUE,
+  name VARCHAR(64) NOT NULL,
+  resource VARCHAR(64) NOT NULL,
+  action VARCHAR(32) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS role_permission (
+  role_id BIGINT NOT NULL,
+  permission_id BIGINT NOT NULL,
+  PRIMARY KEY (role_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_role (
+  user_id BIGINT NOT NULL,
+  role_id BIGINT NOT NULL,
+  PRIMARY KEY (user_id, role_id)
+);
+
+CREATE TABLE IF NOT EXISTS category (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  parent_id BIGINT,
+  name VARCHAR(64) NOT NULL,
+  slug VARCHAR(64) NOT NULL UNIQUE,
+  icon VARCHAR(64),
+  sort_order INT NOT NULL DEFAULT 0,
+  description VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS tag (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(64) NOT NULL UNIQUE,
+  slug VARCHAR(64) NOT NULL UNIQUE,
+  article_count INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS article (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  summary VARCHAR(500),
+  cover_image VARCHAR(255),
+  content_md CLOB,
+  content_html CLOB,
+  author_id BIGINT NOT NULL,
+  category_id BIGINT,
+  status VARCHAR(16) NOT NULL DEFAULT 'draft',
+  is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+  is_top BOOLEAN NOT NULL DEFAULT FALSE,
+  view_count INT NOT NULL DEFAULT 0,
+  like_count INT NOT NULL DEFAULT 0,
+  comment_count INT NOT NULL DEFAULT 0,
+  collect_count INT NOT NULL DEFAULT 0,
+  published_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  seo_title VARCHAR(200),
+  seo_description VARCHAR(500),
+  seo_keywords VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS article_tag (
+  article_id BIGINT NOT NULL,
+  tag_id BIGINT NOT NULL,
+  PRIMARY KEY (article_id, tag_id)
+);
+
+CREATE TABLE IF NOT EXISTS article_version (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  article_id BIGINT NOT NULL,
+  version INT NOT NULL,
+  content_md CLOB,
+  editor_id BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS snippet (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description VARCHAR(500),
+  language VARCHAR(32) NOT NULL,
+  code CLOB NOT NULL,
+  author_id BIGINT NOT NULL,
+  category_id BIGINT,
+  view_count INT NOT NULL DEFAULT 0,
+  like_count INT NOT NULL DEFAULT 0,
+  copy_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS showcase (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description VARCHAR(500),
+  cover_image VARCHAR(255),
+  content CLOB,
+  tech_stack VARCHAR(500),
+  repo_url VARCHAR(255),
+  demo_url VARCHAR(255),
+  author_id BIGINT NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'published',
+  star_count INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS tool (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(128) NOT NULL,
+  description VARCHAR(500),
+  icon VARCHAR(16),
+  url VARCHAR(255),
+  category VARCHAR(64) NOT NULL,
+  tags VARCHAR(255),
+  version VARCHAR(32),
+  license VARCHAR(32),
+  stars VARCHAR(32),
+  sort_order INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS question (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  content CLOB,
+  author_id BIGINT NOT NULL,
+  view_count INT NOT NULL DEFAULT 0,
+  answer_count INT NOT NULL DEFAULT 0,
+  status VARCHAR(16) NOT NULL DEFAULT 'open',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS answer (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  question_id BIGINT NOT NULL,
+  content CLOB,
+  author_id BIGINT NOT NULL,
+  vote_up INT NOT NULL DEFAULT 0,
+  vote_down INT NOT NULL DEFAULT 0,
+  is_accepted BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS comment (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  target_id BIGINT NOT NULL,
+  target_type VARCHAR(16) NOT NULL,
+  parent_id BIGINT,
+  user_id BIGINT NOT NULL,
+  content CLOB NOT NULL,
+  like_count INT NOT NULL DEFAULT 0,
+  status INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS user_like (
+  user_id BIGINT NOT NULL,
+  target_id BIGINT NOT NULL,
+  target_type VARCHAR(16) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, target_id, target_type)
+);
+
+CREATE TABLE IF NOT EXISTS collect (
+  user_id BIGINT NOT NULL,
+  target_id BIGINT NOT NULL,
+  target_type VARCHAR(16) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, target_id, target_type)
+);
+
+CREATE TABLE IF NOT EXISTS follow (
+  follower_id BIGINT NOT NULL,
+  following_id BIGINT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (follower_id, following_id)
+);
+
+CREATE TABLE IF NOT EXISTS notification (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT NOT NULL,
+  type VARCHAR(16) NOT NULL,
+  title VARCHAR(200),
+  content VARCHAR(500),
+  link VARCHAR(255),
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS system_config (
+  config_key VARCHAR(64) PRIMARY KEY,
+  config_value VARCHAR(1000),
+  description VARCHAR(255)
+);
