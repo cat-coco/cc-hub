@@ -24,6 +24,8 @@ backend/**/target/
 *.log
 .DS_Store
 *.local
-.env
+# `.env` is committed with dev-safe defaults so `docker compose up` works
+# out of the box. Use `.env.local` or `.env.prod` for private overrides.
 .env.local
+.env.prod
 .claude

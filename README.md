@@ -31,7 +31,9 @@ cc-hub/
 ├── deploy/nginx.conf            # 前端 Nginx 配置 (API 反向代理到 backend)
 ├── Dockerfile.frontend          # 前端镜像 (node build + nginx)
 ├── backend/Dockerfile           # 后端镜像 (maven build + jre)
-└── docker-compose.yml           # MySQL + Redis + RabbitMQ + backend + web
+├── docker-compose.yml           # backend + web 始终启动；embedded profile 再拉 mysql/redis/rabbitmq
+├── .env                         # compose 默认配置（embedded 模式可直接 `docker compose up`）
+└── .env.example                 # 两种模式的完整参数说明
 ```
 
 ## 开发启动
@@ -53,35 +55,57 @@ npm run dev
 
 默认管理员：`admin` / `ChangeMe123!` — **登录后请立即修改密码**。
 
-### 方式 B：Docker Compose（MySQL + Redis + RabbitMQ）
+### 方式 B：Docker Compose（默认 embedded —— 自带 MySQL + Redis + RabbitMQ）
+
+仓库根已自带 `.env`，默认值让 `docker compose up` 能开箱即用：
 
 ```bash
 docker compose up -d --build
-# → http://localhost            (前端 + /api 反代)
-# → http://localhost:15672      (RabbitMQ 管理, chhub / chhub_pwd)
+# → http://localhost              (前端 + /api 反代)
+# → http://localhost:15672        (RabbitMQ 管理, chhub / chhub_pwd)
 ```
 
 首次启动 MySQL 会自动执行 `db/schema-mysql.sql` + `db/seed-mysql.sql`。
 
-### 方式 C：外接 MySQL
+### 方式 C：Docker Compose + 外部 MySQL / Redis
 
-单文件 schema，请先手动导入后再启动应用：
+编辑 `.env`：
 
 ```bash
-# 1. 导入结构 + 种子
-mysql -h <host> -uchhub -p chhub < db/schema-mysql.sql
-mysql -h <host> -uchhub -p chhub < db/seed-mysql.sql
+# 1) 让 compose 跳过本地 MySQL/Redis/RabbitMQ 容器
+COMPOSE_PROFILES=external
 
-# 2. 启动后端
-export CH_DB_URL="jdbc:mysql://localhost:3306/chhub"
-export CH_DB_USER=chhub
-export CH_DB_PASSWORD=chhub_pwd
-export CH_REDIS_HOST=127.0.0.1
-export CH_REDIS_PORT=6379
-java -jar ch-web/target/ch-web.jar --spring.profiles.active=prod
+# 2) 指向真实地址（账号密码同样从这里读）
+CH_DB_HOST=mysql.prod.example.com
+CH_DB_PORT=3306
+CH_DB_NAME=chhub
+CH_DB_USER=chhub
+CH_DB_PASSWORD=**********
+CH_REDIS_HOST=redis.prod.example.com
+CH_REDIS_PORT=6379
+CH_REDIS_PASSWORD=**********
+CH_JWT_SECRET=<换成 32+ 位的随机串>
 ```
 
-> **说明**：schema 用一个文件管理，不再用 Flyway / Liquibase 迁移。修改表结构直接改 `db/schema-mysql.sql`，然后在空库上重跑；H2 dev 走 `backend/ch-web/src/main/resources/db/schema-h2.sql` 的等价版本。
+在目标 MySQL 上手动导入一次 schema：
+
+```bash
+mysql -h mysql.prod.example.com -uchhub -p chhub < db/schema-mysql.sql
+mysql -h mysql.prod.example.com -uchhub -p chhub < db/seed-mysql.sql
+```
+
+然后仍然：
+
+```bash
+docker compose up -d --build
+```
+
+compose 只会启动 `backend` + `web`（nginx），二者的配置全部通过 `.env` 注入。
+
+> **本地不想污染 `.env`？** 放一个 `.env.local`（已在 `.gitignore` 里）并用
+> `docker compose --env-file .env.local up -d`。
+>
+> **说明**：schema 用单文件管理，不再用 Flyway / Liquibase 迁移。修改表结构直接改 `db/schema-mysql.sql`，然后在空库上重跑；H2 dev 走 `backend/ch-web/src/main/resources/db/schema-h2.sql` 的等价版本。
 
 ## 核心接口（v1）
 

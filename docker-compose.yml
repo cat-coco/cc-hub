@@ -1,13 +1,20 @@
+# `docker compose up` 默认读 .env —— embedded 模式启动全套；
+# 只改 .env 里的 CH_DB_HOST / CH_REDIS_HOST 指向外部服务，再把 COMPOSE_PROFILES
+# 改为空（或 `external`）就只会启动 backend + web。
 services:
+  # =====================================================================
+  # 可选组件（embedded profile 启用）
+  # =====================================================================
   mysql:
     image: mysql:8.0
     container_name: chhub-mysql
     restart: unless-stopped
+    profiles: ["embedded"]
     environment:
-      MYSQL_ROOT_PASSWORD: root_pwd_change_me
-      MYSQL_DATABASE: chhub
-      MYSQL_USER: chhub
-      MYSQL_PASSWORD: chhub_pwd
+      MYSQL_ROOT_PASSWORD: ${CH_DB_ROOT_PASSWORD:-root_pwd_change_me}
+      MYSQL_DATABASE: ${CH_DB_NAME:-chhub}
+      MYSQL_USER: ${CH_DB_USER:-chhub}
+      MYSQL_PASSWORD: ${CH_DB_PASSWORD:-chhub_pwd}
       TZ: Asia/Shanghai
     command:
       - --character-set-server=utf8mb4
@@ -18,7 +25,14 @@ services:
       - ./db/schema-mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./db/seed-mysql.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-uchhub", "-pchhub_pwd"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-u${CH_DB_USER:-chhub}",
+          "-p${CH_DB_PASSWORD:-chhub_pwd}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -27,6 +41,9 @@ services:
     image: redis:7-alpine
     container_name: chhub-redis
     restart: unless-stopped
+    profiles: ["embedded"]
+    # embedded Redis 默认不启用 auth；若需要密码请改 .env.local 把本 command 整段覆写
+    # 或把 Redis 换成 external 模式指向真实带密码的集群。
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
@@ -40,32 +57,40 @@ services:
     image: rabbitmq:3.13-management
     container_name: chhub-rabbitmq
     restart: unless-stopped
+    profiles: ["embedded"]
     environment:
-      RABBITMQ_DEFAULT_USER: chhub
-      RABBITMQ_DEFAULT_PASS: chhub_pwd
+      RABBITMQ_DEFAULT_USER: ${CH_DB_USER:-chhub}
+      RABBITMQ_DEFAULT_PASS: ${CH_DB_PASSWORD:-chhub_pwd}
     ports:
-      - "15672:15672"
+      - "${CH_RABBITMQ_MGMT_PORT:-15672}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
 
+  # =====================================================================
+  # 始终启动（docker compose up 默认）
+  # =====================================================================
   backend:
     build:
       context: ./backend
     container_name: chhub-backend
     restart: unless-stopped
+    # required:false — external 模式下没启动 mysql/redis 容器也不会报错
     depends_on:
       mysql:
         condition: service_healthy
+        required: false
       redis:
         condition: service_healthy
+        required: false
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      CH_DB_URL: "jdbc:mysql://mysql:3306/chhub?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
-      CH_DB_USER: chhub
-      CH_DB_PASSWORD: chhub_pwd
-      CH_REDIS_HOST: redis
-      CH_REDIS_PORT: "6379"
-      CH_JWT_SECRET: please-change-me-this-is-compose-default-very-long-secret-xyz
+      CH_DB_URL: "jdbc:mysql://${CH_DB_HOST:-mysql}:${CH_DB_PORT:-3306}/${CH_DB_NAME:-chhub}?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+      CH_DB_USER: ${CH_DB_USER:-chhub}
+      CH_DB_PASSWORD: ${CH_DB_PASSWORD:-chhub_pwd}
+      CH_REDIS_HOST: ${CH_REDIS_HOST:-redis}
+      CH_REDIS_PORT: ${CH_REDIS_PORT:-6379}
+      CH_REDIS_PASSWORD: ${CH_REDIS_PASSWORD:-}
+      CH_JWT_SECRET: ${CH_JWT_SECRET:-please-change-me-this-is-compose-default-very-long-secret-xyz}
     expose:
       - "8080"
 
@@ -78,7 +103,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "${CH_WEB_PORT:-80}:80"
 
 volumes:
   mysql-data:
