@@ -44,11 +44,13 @@ export interface ArticleListItem {
   summary?: string | null;
   coverImage?: string | null;
   author: AuthorBrief;
+  status?: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'OFFLINE';
   viewCount: number;
   likeCount: number;
   commentCount: number;
   tags: string[];
   publishedAt?: string | null;
+  updatedAt?: string | null;
   readMinutes: number;
 }
 

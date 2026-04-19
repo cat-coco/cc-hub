@@ -43,14 +43,15 @@ public class StatsController {
         this.userMapper = userMapper;
     }
 
-    /** Public "hero numbers" for the home page. */
+    /**
+     * Public "hero numbers" for the home page. Matches the underlying
+     * DB table row counts (all articles, not just PUBLISHED).
+     */
     @GetMapping("/stats/public/overview")
     public R<Map<String, Long>> publicOverview() {
         Map<String, Long> m = new HashMap<>();
-        m.put("articles", articleMapper.selectCount(new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, "PUBLISHED")));
-        m.put("cases", showcaseMapper.selectCount(new LambdaQueryWrapper<Showcase>()
-                .eq(Showcase::getStatus, "published")));
+        m.put("articles", articleMapper.selectCount(null));
+        m.put("cases", showcaseMapper.selectCount(null));
         m.put("snippets", snippetMapper.selectCount(null));
         m.put("users", userMapper.selectCount(null));
         return R.ok(m);

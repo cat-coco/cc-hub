@@ -34,6 +34,17 @@ public class AdminArticleController {
 
     // ---------- CRUD ----------
 
+    @GetMapping
+    @Operation(summary = "后台文章列表（任意状态；status=PENDING 供待审核队列）")
+    public R<com.claudecode.hub.common.api.PageResult<com.claudecode.hub.content.dto.ContentDtos.ArticleListItem>> list(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long categoryId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "updated") String sort,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "1") long page,
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") long size) {
+        return R.ok(articleService.listForAdmin(status, categoryId, sort, page, size));
+    }
+
     @PostMapping
     @Operation(summary = "创建文章（status 未指定时默认 DRAFT）")
     public R<ArticleDetail> create(@Valid @RequestBody ArticleCreateReq req) {

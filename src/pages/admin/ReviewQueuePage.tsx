@@ -2,19 +2,12 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminShell from '../../components/AdminShell';
-import { adminArticlesApi } from '../../api/endpoints';
-import { articlesApi } from '../../api/endpoints';
-import { get } from '../../api/client';
-import type { ArticleListItem, PageResult } from '../../api/types';
+import { adminArticlesApi, articlesApi } from '../../api/endpoints';
 
 function usePendingArticles() {
-  // Reuse /api/articles with status filter; we have no direct admin list API yet.
-  // As a temporary lightweight solution, call articles list filter via author=me=all,
-  // then filter client-side. A dedicated /api/admin/articles?status=PENDING endpoint
-  // is marked as TODO and will land in batch 5 along with the dashboard aggregation.
   return useQuery({
     queryKey: ['admin', 'review-queue'],
-    queryFn: () => get<PageResult<ArticleListItem>>('/api/articles', { size: 50, sort: 'latest' }),
+    queryFn: () => adminArticlesApi.list({ status: 'PENDING', sort: 'updated', size: 50 }),
   });
 }
 

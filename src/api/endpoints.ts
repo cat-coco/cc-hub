@@ -66,6 +66,8 @@ export const authorArticlesApi = {
 };
 
 export const adminArticlesApi = {
+  list: (params: { status?: string; categoryId?: number; sort?: string; page?: number; size?: number } = {}) =>
+    get<PageResult<ArticleListItem>>('/api/admin/articles', params),
   create: (req: ArticleCreateReq) => post<ArticleDetail>('/api/admin/articles', req),
   update: (id: number, req: ArticleCreateReq) => put<ArticleDetail>(`/api/admin/articles/${id}`, req),
   remove: (id: number) => del<void>(`/api/admin/articles/${id}`),

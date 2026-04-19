@@ -82,9 +82,10 @@ public class ArticleService {
                         catName(cats.get(a.getCategoryId())),
                         a.getSummary(), a.getCoverImage(),
                         briefAuthor(authors.get(a.getAuthorId())),
+                        a.getStatus(),
                         n(a.getViewCount()), n(a.getLikeCount()), n(a.getCommentCount()),
                         tagsByArticle.getOrDefault(a.getId(), List.of()),
-                        a.getPublishedAt(),
+                        a.getPublishedAt(), a.getUpdatedAt(),
                         readMinutes(a.getContentMd()))
         ).filter(i -> tag == null || i.tags().contains(tag)).toList();
 
@@ -212,6 +213,45 @@ public class ArticleService {
         return v;
     }
 
+    /**
+     * Admin-scope listing — returns articles regardless of status. Optional
+     * filters: {@code status}, {@code categoryId}. Sort is the same vocabulary
+     * as {@link #listPublished} plus "updated" to help the review queue.
+     */
+    public PageResult<ArticleListItem> listForAdmin(String status, Long categoryId, String sort,
+                                                   long page, long size) {
+        Page<Article> p = new Page<>(Math.max(1, page), Math.max(1, Math.min(100, size)));
+        LambdaQueryWrapper<Article> qw = new LambdaQueryWrapper<>();
+        if (status != null && !status.isBlank()) qw.eq(Article::getStatus, status.toUpperCase());
+        if (categoryId != null) qw.eq(Article::getCategoryId, categoryId);
+        switch (sort == null ? "updated" : sort) {
+            case "hot" -> qw.orderByDesc(Article::getLikeCount, Article::getViewCount);
+            case "latest" -> qw.orderByDesc(Article::getPublishedAt, Article::getId);
+            default -> qw.orderByDesc(Article::getUpdatedAt, Article::getId);
+        }
+        Page<Article> paged = articleMapper.selectPage(p, qw);
+
+        Map<Long, User> authors = batchAuthors(paged.getRecords());
+        Map<Long, Category> cats = batchCats(paged.getRecords());
+        Map<Long, List<String>> tagsByArticle = batchTags(paged.getRecords());
+
+        List<ArticleListItem> items = paged.getRecords().stream().map(a ->
+                new ArticleListItem(
+                        a.getId(), a.getTitle(), a.getSlug(),
+                        catName(cats.get(a.getCategoryId())),
+                        a.getSummary(), a.getCoverImage(),
+                        briefAuthor(authors.get(a.getAuthorId())),
+                        a.getStatus(),
+                        n(a.getViewCount()), n(a.getLikeCount()), n(a.getCommentCount()),
+                        tagsByArticle.getOrDefault(a.getId(), List.of()),
+                        a.getPublishedAt(), a.getUpdatedAt(),
+                        a.getReadTimeMinutes() != null && a.getReadTimeMinutes() > 0
+                                ? a.getReadTimeMinutes()
+                                : readMinutes(a.getContentMd()))
+        ).toList();
+        return new PageResult<>(items, paged.getTotal(), paged.getCurrent(), paged.getSize());
+    }
+
     public List<ArticleListItem> hot(int limit) {
         Page<Article> p = new Page<>(1, limit);
         Page<Article> paged = articleMapper.selectPage(p, new LambdaQueryWrapper<Article>()
@@ -224,9 +264,11 @@ public class ArticleService {
                 new ArticleListItem(a.getId(), a.getTitle(), a.getSlug(),
                         catName(cats.get(a.getCategoryId())), a.getSummary(), a.getCoverImage(),
                         briefAuthor(authors.get(a.getAuthorId())),
+                        a.getStatus(),
                         n(a.getViewCount()), n(a.getLikeCount()), n(a.getCommentCount()),
                         tagsByArticle.getOrDefault(a.getId(), List.of()),
-                        a.getPublishedAt(), readMinutes(a.getContentMd()))
+                        a.getPublishedAt(), a.getUpdatedAt(),
+                        readMinutes(a.getContentMd()))
         ).toList();
     }
 

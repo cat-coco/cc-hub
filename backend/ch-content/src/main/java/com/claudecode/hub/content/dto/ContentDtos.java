@@ -26,11 +26,13 @@ public final class ContentDtos {
             String summary,
             String coverImage,
             AuthorBrief author,
+            String status,
             int viewCount,
             int likeCount,
             int commentCount,
             List<String> tags,
             LocalDateTime publishedAt,
+            LocalDateTime updatedAt,
             int readMinutes) {
     }
 
