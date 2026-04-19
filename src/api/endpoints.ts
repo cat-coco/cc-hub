@@ -58,6 +58,13 @@ export interface ArticleVersionRow {
   createdAt: string;
 }
 
+/** Author-side (any logged-in user) article self-service endpoints. */
+export const authorArticlesApi = {
+  create: (req: ArticleCreateReq) => post<ArticleDetail>('/api/articles', req),
+  update: (id: number, req: ArticleCreateReq) => put<ArticleDetail>(`/api/articles/${id}`, req),
+  submitReview: (id: number) => post<ArticleDetail>(`/api/articles/${id}/submit-review`),
+};
+
 export const adminArticlesApi = {
   create: (req: ArticleCreateReq) => post<ArticleDetail>('/api/admin/articles', req),
   update: (id: number, req: ArticleCreateReq) => put<ArticleDetail>(`/api/admin/articles/${id}`, req),

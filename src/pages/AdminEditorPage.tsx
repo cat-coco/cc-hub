@@ -7,7 +7,7 @@ import rehypeHighlight from 'rehype-highlight';
 import Icon from '../components/Icon';
 import RichEditor from '../components/RichEditor';
 import LockConflictModal from '../components/LockConflictModal';
-import { adminArticlesApi, articlesApi, categoriesApi } from '../api/endpoints';
+import { adminArticlesApi, articlesApi, authorArticlesApi, categoriesApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
 import { useAuthStore } from '../store/auth';
 import { useEditLock } from '../hooks/useEditLock';
@@ -92,6 +92,7 @@ export default function AdminEditorPage() {
   const navigate = useNavigate();
 
   const user = useAuthStore((s) => s.user);
+  const isAdmin = (user?.roles ?? []).some((r) => r === 'ROLE_ADMIN' || r === 'ROLE_SUPER_ADMIN');
   const isSuperAdmin = (user?.roles ?? []).includes('ROLE_SUPER_ADMIN');
 
   const [mode, setMode] = useState<Mode>('split');
@@ -120,6 +121,18 @@ export default function AdminEditorPage() {
     queryKey: ['admin', 'article', editingId],
     queryFn: () => articlesApi.detail(editingId!),
   });
+
+  // Authors can only edit their own drafts. Admins can edit anything.
+  useEffect(() => {
+    const a = existingQ.data;
+    if (!a || !user) return;
+    if (!isAdmin && a.author.id !== user.id) {
+      alert('无权编辑此文章，已返回列表。');
+      navigate('/profile');
+    }
+  }, [existingQ.data, user, isAdmin, navigate]);
+
+  const articleStatus: string | undefined = existingQ.data?.status;
 
   useEffect(() => {
     if (existingQ.data) {
@@ -160,21 +173,69 @@ export default function AdminEditorPage() {
         contentMd: draft.contentMd,
         categoryId: draft.categoryId,
         tags: draft.tags,
-        status,
+        status: isAdmin ? status : 'DRAFT',
         seoTitle: draft.seoTitle || undefined,
         seoDescription: draft.seoDescription || undefined,
         seoKeywords: draft.seoKeywords || undefined,
         isFeatured: draft.isFeatured,
         isTop: draft.isTop,
-      };
-      return editingId ? adminArticlesApi.update(editingId, req) : adminArticlesApi.create(req);
+      } as const;
+      const api = isAdmin ? adminArticlesApi : authorArticlesApi;
+      return editingId ? api.update(editingId, req) : api.create(req);
     },
     onSuccess: (a) => {
       clearAutoSave();
       setErr(null);
-      navigate(`/article/${a.slug}`);
+      // Non-admins: stay on editor so they can hit "提交审核" next.
+      if (isAdmin) navigate(`/article/${a.slug}`);
+      else navigate(`/editor/${a.id}`, { replace: true });
     },
     onError: (e) => setErr(e instanceof ApiError ? e.message : '保存失败'),
+  });
+
+  const submitReviewMut = useMutation({
+    mutationFn: async () => {
+      // Ensure latest draft is persisted before submitting.
+      let current = editingId;
+      if (!current) {
+        const created = await authorArticlesApi.create({
+          title: draft.title,
+          summary: draft.summary || undefined,
+          contentMd: draft.contentMd,
+          categoryId: draft.categoryId,
+          tags: draft.tags,
+          status: 'DRAFT',
+          seoTitle: draft.seoTitle || undefined,
+          seoDescription: draft.seoDescription || undefined,
+          seoKeywords: draft.seoKeywords || undefined,
+          isFeatured: false,
+          isTop: false,
+        });
+        current = created.id;
+      } else {
+        await authorArticlesApi.update(current, {
+          title: draft.title,
+          summary: draft.summary || undefined,
+          contentMd: draft.contentMd,
+          categoryId: draft.categoryId,
+          tags: draft.tags,
+          status: 'DRAFT',
+          seoTitle: draft.seoTitle || undefined,
+          seoDescription: draft.seoDescription || undefined,
+          seoKeywords: draft.seoKeywords || undefined,
+          isFeatured: false,
+          isTop: false,
+        });
+      }
+      return authorArticlesApi.submitReview(current);
+    },
+    onSuccess: () => {
+      clearAutoSave();
+      setErr(null);
+      alert('已提交审核，管理员通过后会自动发布。');
+      navigate('/profile');
+    },
+    onError: (e) => setErr(e instanceof ApiError ? e.message : '提交失败'),
   });
 
   function addTag() {
@@ -192,7 +253,12 @@ export default function AdminEditorPage() {
 
   const contentHtml = mdToBasicHtml(draft.contentMd);
 
-  const readOnly = lock.status.state === 'conflict' || lock.status.state === 'lost';
+  // Non-admin authors can't modify PENDING/PUBLISHED/OFFLINE — those require admin action.
+  const nonEditableForAuthor = !isAdmin && articleStatus != null && articleStatus !== 'DRAFT';
+  const readOnly =
+    lock.status.state === 'conflict' ||
+    lock.status.state === 'lost' ||
+    nonEditableForAuthor;
 
   return (
     <div className="ed" onKeyDown={() => lock.touchActivity()} onMouseDown={() => lock.touchActivity()}>
@@ -258,23 +324,51 @@ export default function AdminEditorPage() {
           <button
             type="button"
             className="btn btn-ghost btn-sm"
-            disabled={saveMut.isPending || readOnly}
+            disabled={saveMut.isPending || submitReviewMut.isPending || readOnly}
             onClick={() => saveMut.mutate('DRAFT')}
           >
             {saveMut.isPending ? '保存中…' : '存为草稿'}
           </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            disabled={saveMut.isPending || readOnly || !draft.title.trim()}
-            onClick={() => saveMut.mutate('PUBLISHED')}
-          >
-            {saveMut.isPending ? '发布中…' : '发布'}
-          </button>
+          {isAdmin ? (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={saveMut.isPending || readOnly || !draft.title.trim()}
+              onClick={() => saveMut.mutate('PUBLISHED')}
+              title="管理员可直接发布，不经审核"
+            >
+              {saveMut.isPending ? '发布中…' : '直接发布'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={submitReviewMut.isPending || readOnly || !draft.title.trim() || !draft.contentMd.trim()}
+              onClick={() => submitReviewMut.mutate()}
+              title="提交后进入审核队列，管理员通过即可在 C 端可见"
+            >
+              {submitReviewMut.isPending ? '提交中…' : '提交审核'}
+            </button>
+          )}
         </div>
       </div>
 
       <div className="earea">
+        {!isAdmin && (
+          <div style={{ padding: '8px 18px', background: 'rgba(68,106,122,0.10)', color: 'var(--info)', fontSize: 13 }}>
+            作者投稿流程：<b>存为草稿</b> 反复编辑 → <b>提交审核</b> → 管理员通过后在 C 端自动发布。
+          </div>
+        )}
+        {articleStatus && articleStatus !== 'DRAFT' && (
+          <div style={{ padding: '8px 18px', background: 'rgba(184,136,36,0.10)', color: 'var(--warning)', fontSize: 13 }}>
+            当前状态 <b>
+              {articleStatus === 'PENDING' ? '审核中'
+                : articleStatus === 'PUBLISHED' ? '已发布'
+                : articleStatus === 'OFFLINE' ? '已下架' : articleStatus}
+            </b>
+            {!isAdmin && '，请等待管理员处理或联系管理员撤回。'}
+          </div>
+        )}
         {err && (
           <div style={{ padding: '8px 18px', background: 'rgba(178,70,63,0.08)', color: 'var(--danger)', fontSize: 13 }}>
             {err}

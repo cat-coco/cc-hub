@@ -162,7 +162,7 @@ export default function HomePage() {
               {latestQ.isLoading && <div style={{ color: 'var(--ink-3)' }}>正在加载…</div>}
               {!latestQ.isLoading && articles.length === 0 && (
                 <div style={{ padding: 32, color: 'var(--ink-3)', border: '1px dashed var(--line)', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
-                  还没有发布的文章。<Link to="/admin/editor" style={{ color: 'var(--brand)' }}>现在写一篇 →</Link>
+                  还没有发布的文章。<Link to="/editor" style={{ color: 'var(--brand)' }}>现在写一篇 →</Link>
                 </div>
               )}
               {articles.map((a, idx) => (
@@ -217,7 +217,7 @@ export default function HomePage() {
                 <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--brand-ink)', lineHeight: 1.6 }}>
                   把你的实战经验写成文章，影响下一位开发者。
                 </p>
-                <Link className="btn btn-primary btn-sm" to="/admin/editor">开始写作 →</Link>
+                <Link className="btn btn-primary btn-sm" to="/editor">开始写作 →</Link>
               </div>
             </aside>
           </div>
@@ -258,7 +258,7 @@ export default function HomePage() {
               <br />
               把你的第一个 Claude Code 项目写下来。
             </h3>
-            <Link className="btn btn-lg" to="/admin/editor">投稿你的案例</Link>
+            <Link className="btn btn-lg" to="/editor">投稿你的案例</Link>
           </div>
         </section>
       </main>

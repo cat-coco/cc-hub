@@ -70,6 +70,11 @@ export default function App() {
 
       {/* Admin — legacy */}
       <Route path="/admin" element={<RequireAdmin><AdminDashboardPage /></RequireAdmin>} />
+      {/* Author self-service editor (any logged-in user). Role check inside the component
+          decides whether to show 直接发布 vs 提交审核. */}
+      <Route path="/editor" element={<RequireAuth><AdminEditorPage /></RequireAuth>} />
+      <Route path="/editor/:id" element={<RequireAuth><AdminEditorPage /></RequireAuth>} />
+      {/* Admin-only entry (same component, kept for existing links + mental model). */}
       <Route path="/admin/editor" element={<RequireAdmin><AdminEditorPage /></RequireAdmin>} />
       <Route path="/admin/editor/:id" element={<RequireAdmin><AdminEditorPage /></RequireAdmin>} />
 

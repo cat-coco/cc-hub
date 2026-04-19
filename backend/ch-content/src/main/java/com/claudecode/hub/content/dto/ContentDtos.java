@@ -45,6 +45,7 @@ public final class ContentDtos {
             AuthorBrief author,
             CategoryVO category,
             List<TagVO> tags,
+            String status,
             int viewCount,
             int likeCount,
             int commentCount,

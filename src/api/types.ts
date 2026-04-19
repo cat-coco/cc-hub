@@ -63,6 +63,7 @@ export interface ArticleDetail {
   author: AuthorBrief;
   category?: CategoryVO | null;
   tags: TagVO[];
+  status?: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'OFFLINE';
   viewCount: number;
   likeCount: number;
   commentCount: number;

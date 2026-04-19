@@ -75,7 +75,7 @@ export default function ArticlesPage() {
             {articlesQ.isLoading && <div style={{ padding: 24, color: 'var(--ink-3)' }}>正在加载…</div>}
             {!articlesQ.isLoading && items.length === 0 && (
               <div style={{ padding: 48, color: 'var(--ink-3)', border: '1px dashed var(--line)', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
-                暂无文章。<Link to="/admin/editor" style={{ color: 'var(--brand)' }}>写一篇 →</Link>
+                暂无文章。<Link to="/editor" style={{ color: 'var(--brand)' }}>写一篇 →</Link>
               </div>
             )}
             {items.map((a, i) => (

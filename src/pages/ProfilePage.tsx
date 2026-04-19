@@ -42,7 +42,7 @@ export default function ProfilePage() {
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => { logout(); navigate('/login'); }}>
               退出登录
             </button>
-            <Link className="btn btn-primary btn-sm" to="/admin/editor">写文章</Link>
+            <Link className="btn btn-primary btn-sm" to="/editor">写文章</Link>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export default function ProfilePage() {
           <div>
             {tab === 'articles' && (
               <div style={{ padding: 32, color: 'var(--ink-3)', border: '1px dashed var(--line)', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
-                你还没有发表过文章。<Link to="/admin/editor" style={{ color: 'var(--brand)' }}>写第一篇 →</Link>
+                你还没有发表过文章。<Link to="/editor" style={{ color: 'var(--brand)' }}>写第一篇 →</Link>
               </div>
             )}
             {tab === 'settings' && (

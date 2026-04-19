@@ -116,6 +116,7 @@ public class ArticleService {
                         cat.getSlug(), cat.getIcon(), cat.getDescription(), 0),
                 tags.stream().map(t -> new TagVO(t.getId(), t.getName(), t.getSlug(),
                         t.getArticleCount() == null ? 0 : t.getArticleCount())).toList(),
+                a.getStatus(),
                 n(a.getViewCount()) + 1, n(a.getLikeCount()), n(a.getCommentCount()), n(a.getCollectCount()),
                 a.getPublishedAt(), readMinutes(a.getContentMd()),
                 a.getSeoTitle(), a.getSeoDescription(), a.getSeoKeywords());
@@ -408,5 +409,18 @@ public class ArticleService {
     private int readMinutes(String md) {
         if (md == null) return 1;
         return Math.max(1, (int) Math.ceil(md.length() / 400.0));
+    }
+
+    /**
+     * Ownership guard: the current user must be the article's author, or
+     * hold an admin role, otherwise throws 403.
+     */
+    public Article requireOwnerOrAdmin(long articleId, long userId, boolean isAdmin) {
+        Article a = articleMapper.selectById(articleId);
+        if (a == null) throw new BizException(404, "文章不存在");
+        if (!isAdmin && !Long.valueOf(userId).equals(a.getAuthorId())) {
+            throw new BizException(403, "无权操作此文章");
+        }
+        return a;
     }
 }
