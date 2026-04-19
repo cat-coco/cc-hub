@@ -160,7 +160,7 @@ export default function LoginPage() {
                       mode === 'register' ? setEmail(e.target.value) : setAccount(e.target.value)
                     }
                     placeholder={
-                      mode === 'register' ? 'you@example.com' : '首次部署：admin'
+                      mode === 'register' ? 'you@example.com' : ''
                     }
                     autoComplete={mode === 'register' ? 'email' : 'username'}
                     required
@@ -172,7 +172,7 @@ export default function LoginPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={mode === 'register' ? '至少 8 位，含字母与数字' : '首次部署默认：ChangeMe123!'}
+                    placeholder={mode === 'register' ? '至少 8 位，含字母与数字' : ''}
                     autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                     required
                     minLength={8}
