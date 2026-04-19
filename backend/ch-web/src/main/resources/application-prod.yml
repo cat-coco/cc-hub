@@ -10,6 +10,8 @@ spring:
   sql:
     init:
       mode: never
+  flyway:
+    enabled: true
   data:
     redis:
       host: ${CH_REDIS_HOST:redis}

@@ -3,6 +3,7 @@ package com.claudecode.hub.content.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.claudecode.hub.common.api.PageResult;
+import com.claudecode.hub.common.domain.ArticleStatus;
 import com.claudecode.hub.common.exception.BizException;
 import com.claudecode.hub.common.util.SlugUtils;
 import com.claudecode.hub.content.dto.ContentDtos;
@@ -60,7 +61,8 @@ public class ArticleService {
                                                     long page, long size) {
         Page<Article> p = new Page<>(Math.max(1, page), Math.max(1, Math.min(50, size)));
         LambdaQueryWrapper<Article> qw = new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, "published");
+                .eq(Article::getStatus, ArticleStatus.PUBLISHED.name())
+                .orderByDesc(Article::getIsTop);
         if (categoryId != null) qw.eq(Article::getCategoryId, categoryId);
         switch (sort == null ? "latest" : sort) {
             case "hot" -> qw.orderByDesc(Article::getLikeCount, Article::getViewCount);
@@ -132,19 +134,23 @@ public class ArticleService {
         a.setContentMd(req.contentMd());
         a.setContentHtml(markdown.render(req.contentMd()));
         a.setCategoryId(req.categoryId());
-        String status = req.status() == null ? "draft" : req.status();
-        a.setStatus(status);
+        ArticleStatus status = ArticleStatus.of(req.status() == null ? "DRAFT" : req.status());
+        if (status == null) status = ArticleStatus.DRAFT;
+        a.setStatus(status.name());
         a.setIsFeatured(Boolean.TRUE.equals(req.isFeatured()));
         a.setIsTop(Boolean.TRUE.equals(req.isTop()));
         a.setViewCount(0); a.setLikeCount(0); a.setCommentCount(0); a.setCollectCount(0);
+        a.setReadTimeMinutes(readMinutes(a.getContentMd()));
+        a.setLastEditorId(authorId);
+        a.setSummaryType("MANUAL");
         a.setSeoTitle(req.seoTitle());
         a.setSeoDescription(req.seoDescription());
         a.setSeoKeywords(req.seoKeywords());
-        if ("published".equals(status)) a.setPublishedAt(LocalDateTime.now());
+        if (status == ArticleStatus.PUBLISHED) a.setPublishedAt(LocalDateTime.now());
         articleMapper.insert(a);
 
         attachTags(a.getId(), req.tags());
-        snapshot(a, authorId);
+        snapshot(a, authorId, null, "initial version");
         return findBySlugOrId(String.valueOf(a.getId()));
     }
 
@@ -159,13 +165,19 @@ public class ArticleService {
         a.setContentMd(req.contentMd());
         a.setContentHtml(markdown.render(req.contentMd()));
         a.setCategoryId(req.categoryId());
-        String status = req.status() == null ? a.getStatus() : req.status();
-        if (!status.equals(a.getStatus()) && "published".equals(status) && a.getPublishedAt() == null) {
-            a.setPublishedAt(LocalDateTime.now());
+        ArticleStatus currentStatus = ArticleStatus.of(a.getStatus());
+        ArticleStatus nextStatus = req.status() == null ? currentStatus : ArticleStatus.of(req.status());
+        if (currentStatus != nextStatus && nextStatus != null) {
+            currentStatus.transitionTo(nextStatus);
+            if (nextStatus == ArticleStatus.PUBLISHED && a.getPublishedAt() == null) {
+                a.setPublishedAt(LocalDateTime.now());
+            }
+            a.setStatus(nextStatus.name());
         }
-        a.setStatus(status);
         a.setIsFeatured(Boolean.TRUE.equals(req.isFeatured()));
         a.setIsTop(Boolean.TRUE.equals(req.isTop()));
+        a.setReadTimeMinutes(readMinutes(a.getContentMd()));
+        a.setLastEditorId(editorId);
         a.setSeoTitle(req.seoTitle());
         a.setSeoDescription(req.seoDescription());
         a.setSeoKeywords(req.seoKeywords());
@@ -175,7 +187,7 @@ public class ArticleService {
         articleTagMapper.delete(new LambdaQueryWrapper<ArticleTag>().eq(ArticleTag::getArticleId, id));
         attachTags(id, req.tags());
 
-        snapshot(a, editorId);
+        snapshot(a, editorId, null, null);
         return findBySlugOrId(String.valueOf(id));
     }
 
@@ -188,13 +200,13 @@ public class ArticleService {
     public List<ArticleVersion> versions(long articleId) {
         return versionMapper.selectList(new LambdaQueryWrapper<ArticleVersion>()
                 .eq(ArticleVersion::getArticleId, articleId)
-                .orderByDesc(ArticleVersion::getVersion));
+                .orderByDesc(ArticleVersion::getVersionNo));
     }
 
     public List<ArticleListItem> hot(int limit) {
         Page<Article> p = new Page<>(1, limit);
         Page<Article> paged = articleMapper.selectPage(p, new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, "published")
+                .eq(Article::getStatus, ArticleStatus.PUBLISHED.name())
                 .orderByDesc(Article::getLikeCount, Article::getViewCount));
         Map<Long, User> authors = batchAuthors(paged.getRecords());
         Map<Long, Category> cats = batchCats(paged.getRecords());
@@ -220,15 +232,82 @@ public class ArticleService {
         }
     }
 
-    private void snapshot(Article a, long editorId) {
+    private void snapshot(Article a, long editorId, String editorName, String changeSummary) {
         Long maxV = versionMapper.selectCount(new LambdaQueryWrapper<ArticleVersion>()
                 .eq(ArticleVersion::getArticleId, a.getId()));
         ArticleVersion v = new ArticleVersion();
         v.setArticleId(a.getId());
-        v.setVersion(maxV.intValue() + 1);
-        v.setContentMd(a.getContentMd());
+        v.setVersionNo(maxV.intValue() + 1);
+        v.setTitle(a.getTitle() == null ? "" : a.getTitle());
+        v.setContentMd(a.getContentMd() == null ? "" : a.getContentMd());
+        v.setContentHtml(a.getContentHtml());
         v.setEditorId(editorId);
+        v.setEditorName(editorName);
+        v.setChangeSummary(changeSummary);
         versionMapper.insert(v);
+    }
+
+    // ===================================================================
+    // Lifecycle transitions (batch 1)
+    // ===================================================================
+
+    @Transactional
+    public ArticleDetail submitReview(long id, long userId) {
+        return applyTransition(id, ArticleStatus.PENDING, userId, null);
+    }
+
+    @Transactional
+    public ArticleDetail approve(long id, long reviewerId) {
+        return applyTransition(id, ArticleStatus.PUBLISHED, reviewerId, null);
+    }
+
+    @Transactional
+    public ArticleDetail reject(long id, long reviewerId, String remark) {
+        if (remark == null || remark.isBlank()) throw new BizException("驳回需要填写原因");
+        return applyTransition(id, ArticleStatus.DRAFT, reviewerId, remark);
+    }
+
+    @Transactional
+    public ArticleDetail publish(long id, long operatorId) {
+        return applyTransition(id, ArticleStatus.PUBLISHED, operatorId, null);
+    }
+
+    @Transactional
+    public ArticleDetail unpublish(long id, long operatorId) {
+        return applyTransition(id, ArticleStatus.DRAFT, operatorId, null);
+    }
+
+    @Transactional
+    public ArticleDetail offline(long id, long operatorId) {
+        return applyTransition(id, ArticleStatus.OFFLINE, operatorId, null);
+    }
+
+    private ArticleDetail applyTransition(long id, ArticleStatus target, long operatorId, String remark) {
+        Article a = articleMapper.selectById(id);
+        if (a == null) throw new BizException(404, "文章不存在");
+        ArticleStatus from = ArticleStatus.of(a.getStatus());
+        if (from == null) throw new BizException("文章状态异常：" + a.getStatus());
+        from.transitionTo(target);
+        a.setStatus(target.name());
+        switch (target) {
+            case PUBLISHED -> {
+                if (a.getPublishedAt() == null) a.setPublishedAt(LocalDateTime.now());
+                if (from == ArticleStatus.PENDING) {
+                    a.setReviewerId(operatorId);
+                    a.setReviewedAt(LocalDateTime.now());
+                }
+            }
+            case DRAFT -> {
+                if (from == ArticleStatus.PENDING) {
+                    a.setReviewerId(operatorId);
+                    a.setReviewedAt(LocalDateTime.now());
+                    a.setReviewRemark(remark);
+                }
+            }
+            default -> { /* offline / pending: no side effect */ }
+        }
+        articleMapper.updateById(a);
+        return findBySlugOrId(String.valueOf(id));
     }
 
     private Map<Long, User> batchAuthors(List<Article> rows) {

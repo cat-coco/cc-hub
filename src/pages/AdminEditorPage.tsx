@@ -142,7 +142,7 @@ export default function AdminEditorPage() {
   const categoriesQ = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
 
   const saveMut = useMutation({
-    mutationFn: async (status: 'draft' | 'published') => {
+    mutationFn: async (status: 'DRAFT' | 'PUBLISHED') => {
       const req = {
         title: draft.title,
         summary: draft.summary || undefined,
@@ -215,7 +215,7 @@ export default function AdminEditorPage() {
             type="button"
             className="btn btn-ghost btn-sm"
             disabled={saveMut.isPending}
-            onClick={() => saveMut.mutate('draft')}
+            onClick={() => saveMut.mutate('DRAFT')}
           >
             {saveMut.isPending ? '保存中…' : '存为草稿'}
           </button>
@@ -223,7 +223,7 @@ export default function AdminEditorPage() {
             type="button"
             className="btn btn-primary btn-sm"
             disabled={saveMut.isPending || !draft.title.trim()}
-            onClick={() => saveMut.mutate('published')}
+            onClick={() => saveMut.mutate('PUBLISHED')}
           >
             {saveMut.isPending ? '发布中…' : '发布'}
           </button>

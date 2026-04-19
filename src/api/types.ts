@@ -82,7 +82,7 @@ export interface ArticleCreateReq {
   contentMd: string;
   categoryId?: number | null;
   tags?: string[];
-  status?: 'draft' | 'published' | 'offline';
+  status?: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'OFFLINE';
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string;

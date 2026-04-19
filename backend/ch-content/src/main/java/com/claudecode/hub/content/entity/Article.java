@@ -13,14 +13,17 @@ public class Article {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String title;
+    private String subtitle;
     private String slug;
     private String summary;
+    /** MANUAL or AUTO */
+    private String summaryType;
     private String coverImage;
     private String contentMd;
     private String contentHtml;
     private Long authorId;
     private Long categoryId;
-    /** draft / published / offline */
+    /** DRAFT / PENDING / PUBLISHED / OFFLINE — see {@code ArticleStatus} */
     private String status;
     private Boolean isFeatured;
     private Boolean isTop;
@@ -28,6 +31,11 @@ public class Article {
     private Integer likeCount;
     private Integer commentCount;
     private Integer collectCount;
+    private Integer readTimeMinutes;
+    private String reviewRemark;
+    private Long reviewerId;
+    private LocalDateTime reviewedAt;
+    private Long lastEditorId;
     private LocalDateTime publishedAt;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
@@ -41,10 +49,14 @@ public class Article {
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+    public String getSubtitle() { return subtitle; }
+    public void setSubtitle(String subtitle) { this.subtitle = subtitle; }
     public String getSlug() { return slug; }
     public void setSlug(String slug) { this.slug = slug; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
+    public String getSummaryType() { return summaryType; }
+    public void setSummaryType(String summaryType) { this.summaryType = summaryType; }
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
     public String getContentMd() { return contentMd; }
@@ -69,6 +81,16 @@ public class Article {
     public void setCommentCount(Integer commentCount) { this.commentCount = commentCount; }
     public Integer getCollectCount() { return collectCount; }
     public void setCollectCount(Integer collectCount) { this.collectCount = collectCount; }
+    public Integer getReadTimeMinutes() { return readTimeMinutes; }
+    public void setReadTimeMinutes(Integer readTimeMinutes) { this.readTimeMinutes = readTimeMinutes; }
+    public String getReviewRemark() { return reviewRemark; }
+    public void setReviewRemark(String reviewRemark) { this.reviewRemark = reviewRemark; }
+    public Long getReviewerId() { return reviewerId; }
+    public void setReviewerId(Long reviewerId) { this.reviewerId = reviewerId; }
+    public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public Long getLastEditorId() { return lastEditorId; }
+    public void setLastEditorId(Long lastEditorId) { this.lastEditorId = lastEditorId; }
     public LocalDateTime getPublishedAt() { return publishedAt; }
     public void setPublishedAt(LocalDateTime publishedAt) { this.publishedAt = publishedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }

@@ -9,6 +9,8 @@ import java.util.List;
 public final class ContentDtos {
     private ContentDtos() {}
 
+    public record RejectReq(@NotBlank @Size(max = 500) String remark) {}
+
     public record AuthorBrief(long id, String name, String initial, String avatar) {}
 
     public record CategoryVO(long id, Long parentId, String name, String slug, String icon,

@@ -58,7 +58,7 @@ public class SearchController {
 
         Page<Article> arts = articleMapper.selectPage(new Page<>(page, size),
                 new LambdaQueryWrapper<Article>()
-                        .eq(Article::getStatus, "published")
+                        .eq(Article::getStatus, "PUBLISHED")
                         .and(w -> w.like(Article::getTitle, needle)
                                 .or().like(Article::getSummary, needle)
                                 .or().like(Article::getContentMd, needle))

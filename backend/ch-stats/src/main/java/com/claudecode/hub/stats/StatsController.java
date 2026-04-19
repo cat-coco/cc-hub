@@ -48,7 +48,7 @@ public class StatsController {
     public R<Map<String, Long>> publicOverview() {
         Map<String, Long> m = new HashMap<>();
         m.put("articles", articleMapper.selectCount(new LambdaQueryWrapper<Article>()
-                .eq(Article::getStatus, "published")));
+                .eq(Article::getStatus, "PUBLISHED")));
         m.put("cases", showcaseMapper.selectCount(new LambdaQueryWrapper<Showcase>()
                 .eq(Showcase::getStatus, "published")));
         m.put("snippets", snippetMapper.selectCount(null));
@@ -70,7 +70,7 @@ public class StatsController {
         List<Map<String, Object>> share = cats.stream().map(c -> {
             Long count = articleMapper.selectCount(new LambdaQueryWrapper<Article>()
                     .eq(Article::getCategoryId, c.getId())
-                    .eq(Article::getStatus, "published"));
+                    .eq(Article::getStatus, "PUBLISHED"));
             Map<String, Object> row = new HashMap<>();
             row.put("name", c.getName());
             row.put("count", count);
@@ -81,7 +81,7 @@ public class StatsController {
         // Top articles
         Page<Article> top = articleMapper.selectPage(new Page<>(1, 8),
                 new LambdaQueryWrapper<Article>()
-                        .eq(Article::getStatus, "published")
+                        .eq(Article::getStatus, "PUBLISHED")
                         .orderByDesc(Article::getViewCount, Article::getLikeCount));
         List<Map<String, Object>> topRows = top.getRecords().stream().map(a -> {
             Map<String, Object> row = new HashMap<>();
