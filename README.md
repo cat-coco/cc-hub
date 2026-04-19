@@ -25,8 +25,8 @@ cc-hub/
 │   └── ch-web/                  # 主启动模块 (ChHubApplication)
 │
 ├── db/
-│   ├── schema-mysql.sql         # MySQL 8 DDL (utf8mb4 + ngram FULLTEXT)
-│   └── seed-mysql.sql           # 最小种子 (角色 + admin + 6 个分类)
+│   ├── schema-mysql.sql         # MySQL 8 完整 DDL (单文件，无迁移)
+│   └── seed-mysql.sql           # 初始化数据 (角色 + admin + 6 个分类)
 │
 ├── deploy/nginx.conf            # 前端 Nginx 配置 (API 反向代理到 backend)
 ├── Dockerfile.frontend          # 前端镜像 (node build + nginx)
@@ -65,12 +65,21 @@ docker compose up -d --build
 
 ### 方式 C：外接 MySQL
 
+单文件 schema，请先手动导入后再启动应用：
+
 ```bash
+# 1. 导入结构 + 种子
+mysql -h <host> -uchhub -p chhub < db/schema-mysql.sql
+mysql -h <host> -uchhub -p chhub < db/seed-mysql.sql
+
+# 2. 启动后端
 export CH_DB_URL="jdbc:mysql://localhost:3306/chhub?..."
 export CH_DB_USER=chhub
 export CH_DB_PASSWORD=chhub_pwd
 java -jar ch-web/target/ch-web.jar --spring.profiles.active=prod
 ```
+
+> **说明**：schema 用一个文件管理，不再用 Flyway / Liquibase 迁移。修改表结构直接改 `db/schema-mysql.sql`，然后在空库上重跑；H2 dev 走 `backend/ch-web/src/main/resources/db/schema-h2.sql` 的等价版本。
 
 ## 核心接口（v1）
 

@@ -9,9 +9,7 @@ spring:
       minimum-idle: 4
   sql:
     init:
-      mode: never
-  flyway:
-    enabled: true
+      mode: never       # MySQL schema is provisioned out-of-band (docker-entrypoint-initdb.d / db/schema-mysql.sql)
   data:
     redis:
       host: ${CH_REDIS_HOST:redis}
