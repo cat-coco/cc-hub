@@ -3,8 +3,24 @@ dist
 dist-ssr
 dist-ts-node
 *.tsbuildinfo
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+.mvn/
+dependency-reduced-pom.xml
+backend/**/target/
+
+# IDE
 .vscode
 .idea
+*.iml
+*.ipr
+*.iws
+
+# Misc
 *.log
 .DS_Store
 *.local

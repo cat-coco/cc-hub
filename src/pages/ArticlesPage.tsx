@@ -1,152 +1,128 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '../components/Layout';
+import { articlesApi, categoriesApi, tagsApi } from '../api/endpoints';
 import '../styles/articles.css';
 
-interface Article {
-  cat: string;
-  title: string;
-  excerpt: string;
-  author: string;
-  authorInitial: string;
-  date: string;
-  read: string;
-  views: string;
-  tags: string[];
-  brand?: boolean;
+type SortKey = 'latest' | 'hot' | 'featured';
+
+function formatDate(iso?: string | null) {
+  return (iso ?? '').slice(0, 10);
+}
+function fmt(n: number) {
+  return n >= 10_000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
-const ARTICLES: Article[] = [
-  {
-    cat: '最佳实践',
-    title: '用 Claude Code 重构一个十年历史的 Java 单体：完整复盘',
-    excerpt: '在一个代码量 40 万行、依赖关系盘根错节的企业后台项目里，我们用 Claude Code 花了六周做了一次彻底的结构迁移，把决策、踩坑、工作流都记下来。',
-    author: '张未未', authorInitial: 'Z', date: '2026-04-17', read: '12 分钟', views: '8.2k 阅读',
-    tags: ['#重构', '#Java'], brand: true,
-  },
-  {
-    cat: '源码分析',
-    title: '读懂 MCP 协议：从握手到工具调用的一次完整走读',
-    excerpt: 'MCP 的设计巧思藏在几个不起眼的字段里。我们顺着 TypeScript SDK 的入口把整个生命周期过了一遍，顺手画了十几张时序图。',
-    author: '林秋白', authorInitial: 'L', date: '2026-04-15', read: '18 分钟', views: '5.4k 阅读',
-    tags: ['#MCP', '#源码'],
-  },
-  {
-    cat: '实战教学',
-    title: '从零搭建自己的 MCP Server：一个可落地的最小模板',
-    excerpt: '不讲原理，只讲怎么跑起来。用 250 行 TypeScript 完成一个能被 Claude 调用、带鉴权和限流的 MCP Server，适合作为团队内部 starter。',
-    author: '吴桥', authorInitial: 'W', date: '2026-04-13', read: '9 分钟', views: '3.1k 阅读',
-    tags: ['#MCP', '#教程'],
-  },
-  {
-    cat: '技术洞察',
-    title: 'Agent 时代的代码审查：我们重新定义了 PR 的意义',
-    excerpt: '当 Agent 可以一次提交三千行代码，原有的 review 流程开始失效。这篇文章梳理了我们团队在半年里迭代出来的新工作流。',
-    author: '宋行', authorInitial: 'S', date: '2026-04-10', read: '14 分钟', views: '6.7k 阅读',
-    tags: ['#PR', '#工作流'],
-  },
-  {
-    cat: '最佳实践',
-    title: '把 CLAUDE.md 写到这个程度，团队新人上手只要一天',
-    excerpt: '我们团队维护了一份 2,400 行的 CLAUDE.md，覆盖从提交规范到业务缩写表。新人一天上手不是段子。',
-    author: '陈果', authorInitial: 'C', date: '2026-04-08', read: '11 分钟', views: '12.4k 阅读',
-    tags: ['#CLAUDE.md', '#团队'],
-  },
-  {
-    cat: '源码分析',
-    title: 'Hook 机制读源码笔记（上）：生命周期与注入点',
-    excerpt: '顺着 Hook 子系统的代码读下去，整理出一张完整的生命周期图，附带每个注入点的典型使用姿势。',
-    author: '余声', authorInitial: 'Y', date: '2026-04-05', read: '22 分钟', views: '5.7k 阅读',
-    tags: ['#Hooks', '#源码'],
-  },
-  {
-    cat: '实战教学',
-    title: 'Subagent 到底怎么用才不是玩具？六个真实场景',
-    excerpt: '从代码审查、测试生成到数据迁移，六个能直接复用的 Subagent 模板。',
-    author: '何迁', authorInitial: 'H', date: '2026-04-02', read: '15 分钟', views: '8.1k 阅读',
-    tags: ['#Subagent', '#模板'],
-  },
-];
-
-const TOP_AUTHORS = [
-  { initial: 'Z', name: '张未未', meta: '127 篇 · 2.1k 粉丝' },
-  { initial: 'L', name: '林秋白', meta: '89 篇 · 1.8k 粉丝' },
-  { initial: 'C', name: '陈果', meta: '76 篇 · 1.5k 粉丝' },
-  { initial: 'W', name: '吴桥', meta: '64 篇 · 1.2k 粉丝' },
-  { initial: 'S', name: '宋行', meta: '52 篇 · 980 粉丝' },
-  { initial: 'Y', name: '余声', meta: '48 篇 · 870 粉丝' },
-];
-
-const TAGS = ['#MCP', '#SDK', '#Prompt', '#源码', '#Agent', '#Subagent', '#Hooks', '#CLI', '#VS Code', '#Node', '#Python', '#CLAUDE.md', '#重构', '#测试'];
-
 export default function ArticlesPage() {
+  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
+  const [sort, setSort] = useState<SortKey>('latest');
+  const [page, setPage] = useState(1);
+
+  const categoriesQ = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
+  const tagsQ = useQuery({ queryKey: ['tags', 'all'], queryFn: tagsApi.all });
+  const articlesQ = useQuery({
+    queryKey: ['articles', 'list', categoryId, sort, page],
+    queryFn: () => articlesApi.list({ categoryId, sort, page, size: 10 }),
+  });
+
+  const items = articlesQ.data?.items ?? [];
+  const total = articlesQ.data?.total ?? 0;
+  const categories = categoriesQ.data ?? [];
+  const tags = tagsQ.data ?? [];
+
   return (
     <Layout active="articles">
       <main className="container">
         <div className="articles-head">
           <h1>文章</h1>
-          <p>2,847 篇来自社区开发者的第一手技术实录</p>
+          <p>{total} 篇来自社区开发者的第一手技术实录</p>
           <div className="articles-filters">
-            <span className="chip chip-active">全部</span>
-            <span className="chip">最佳实践 · 842</span>
-            <span className="chip">技术洞察 · 316</span>
-            <span className="chip">源码分析 · 127</span>
-            <span className="chip">实战教学 · 489</span>
-            <span className="chip">问答 · 1073</span>
+            <span
+              className={`chip${categoryId === undefined ? ' chip-active' : ''}`}
+              onClick={() => { setCategoryId(undefined); setPage(1); }}
+            >
+              全部
+            </span>
+            {categories.map((c) => (
+              <span
+                key={c.id}
+                className={`chip${categoryId === c.id ? ' chip-active' : ''}`}
+                onClick={() => { setCategoryId(c.id); setPage(1); }}
+              >
+                {c.name}
+              </span>
+            ))}
             <div className="articles-filters-right">
-              <span className="chip chip-active">最新</span>
-              <span className="chip">最热</span>
-              <span className="chip">精华</span>
+              {(['latest', 'hot', 'featured'] as const).map((k) => (
+                <span
+                  key={k}
+                  className={`chip${sort === k ? ' chip-active' : ''}`}
+                  onClick={() => { setSort(k); setPage(1); }}
+                >
+                  {k === 'latest' ? '最新' : k === 'hot' ? '最热' : '精华'}
+                </span>
+              ))}
             </div>
           </div>
           <div className="articles-tag-cloud">
-            {TAGS.map((t) => <span className="tag" key={t}>{t}</span>)}
+            {tags.slice(0, 16).map((t) => <span className="tag" key={t.id}>#{t.name}</span>)}
           </div>
         </div>
 
         <div className="articles-layout-2col">
           <div className="articles-list">
-            {ARTICLES.map((a) => (
-              <Link className="aitem" to="/article" key={a.title}>
-                <div className={`ph ${a.brand ? 'ph-brand' : ''}`}>cover · 4:3</div>
+            {articlesQ.isLoading && <div style={{ padding: 24, color: 'var(--ink-3)' }}>正在加载…</div>}
+            {!articlesQ.isLoading && items.length === 0 && (
+              <div style={{ padding: 48, color: 'var(--ink-3)', border: '1px dashed var(--line)', borderRadius: 'var(--r-md)', textAlign: 'center' }}>
+                暂无文章。<Link to="/admin/editor" style={{ color: 'var(--brand)' }}>写一篇 →</Link>
+              </div>
+            )}
+            {items.map((a, i) => (
+              <Link className="aitem" to={`/article/${a.slug}`} key={a.id}>
+                <div className={`ph ${i === 0 ? 'ph-brand' : ''}`}>cover · 4:3</div>
                 <div>
-                  <div className="acat">{a.cat}</div>
+                  <div className="acat">{a.category || '未分类'}</div>
                   <h3 className="atitle">{a.title}</h3>
-                  <p className="aexcerpt">{a.excerpt}</p>
+                  <p className="aexcerpt">{a.summary || ''}</p>
                   <div className="ameta">
-                    <span className="ava">{a.authorInitial}</span>
-                    <span>{a.author}</span>
+                    <span className="ava">{a.author.initial}</span>
+                    <span>{a.author.name}</span>
                     <span className="dot" />
-                    <span>{a.date}</span>
+                    <span>{formatDate(a.publishedAt)}</span>
                     <span className="dot" />
-                    <span>{a.read}</span>
+                    <span>{a.readMinutes} 分钟</span>
                     <span className="dot" />
-                    <span>{a.views}</span>
-                    <span className="dot" />
+                    <span>{fmt(a.viewCount)} 阅读</span>
+                    {a.tags.length > 0 && <span className="dot" />}
                     <span className="atags">
-                      {a.tags.map((t) => <span className="tag" key={t}>{t}</span>)}
+                      {a.tags.slice(0, 3).map((t) => <span className="tag" key={t}>#{t}</span>)}
                     </span>
                   </div>
                 </div>
               </Link>
             ))}
-            <div className="articles-pager">
-              <button type="button" className="articles-loadmore">加载更多 · 还有 2,840 篇</button>
-            </div>
+            {items.length > 0 && total > page * 10 && (
+              <div className="articles-pager">
+                <button
+                  type="button"
+                  className="articles-loadmore"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={articlesQ.isFetching}
+                >
+                  {articlesQ.isFetching ? '加载中…' : `加载更多 · 还有 ${total - page * 10} 篇`}
+                </button>
+              </div>
+            )}
           </div>
 
           <aside>
             <div className="articles-side" style={{ position: 'static' }}>
-              <h4>活跃作者 Top 10</h4>
-              {TOP_AUTHORS.map((a) => (
-                <div className="articles-author-row" key={a.name}>
-                  <span className="ava">{a.initial}</span>
-                  <div>
-                    <div className="an">{a.name}</div>
-                    <div className="am">{a.meta}</div>
-                  </div>
-                  <button type="button" className="btn btn-secondary btn-sm">关注</button>
-                </div>
-              ))}
+              <h4>热门标签</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {tags.slice(0, 24).map((t) => <span className="tag" key={t.id}>#{t.name}</span>)}
+                {tags.length === 0 && <span style={{ color: 'var(--ink-3)', fontSize: 13 }}>暂无标签</span>}
+              </div>
             </div>
           </aside>
         </div>

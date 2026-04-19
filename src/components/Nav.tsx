@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { IconSearch } from './Icon';
+import { useAuthStore } from '../store/auth';
 
 const LINKS = [
   { to: '/home', key: 'home', label: '首页' },
@@ -15,6 +16,13 @@ interface NavProps {
 }
 
 export default function Nav({ active }: NavProps) {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = useAuthStore((s) => s.isAdmin());
+  const initial =
+    user?.nickname?.charAt(0)?.toUpperCase() ??
+    user?.username?.charAt(0)?.toUpperCase() ??
+    'Z';
+
   return (
     <nav className="nav">
       <div className="nav-inner">
@@ -41,12 +49,27 @@ export default function Nav({ active }: NavProps) {
           <span>搜索文章、Snippets、工具…</span>
           <kbd>⌘K</kbd>
         </Link>
-        <Link className="nav-link" to="/login">
-          登录
-        </Link>
-        <Link className="nav-avatar" to="/profile" title="我的主页">
-          Z
-        </Link>
+        {user ? (
+          <>
+            {isAdmin && (
+              <Link className="nav-link" to="/admin/dashboard">
+                后台
+              </Link>
+            )}
+            <Link className="nav-avatar" to="/profile" title={user.nickname || user.username}>
+              {initial}
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link className="nav-link" to="/login">
+              登录
+            </Link>
+            <Link className="nav-avatar" to="/login" title="登录">
+              {initial}
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

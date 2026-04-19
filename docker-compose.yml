@@ -1,0 +1,86 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: chhub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pwd_change_me
+      MYSQL_DATABASE: chhub
+      MYSQL_USER: chhub
+      MYSQL_PASSWORD: chhub_pwd
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --ngram_token_size=2
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/schema-mysql.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed-mysql.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-uchhub", "-pchhub_pwd"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: chhub-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: chhub-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: chhub
+      RABBITMQ_DEFAULT_PASS: chhub_pwd
+    ports:
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  backend:
+    build:
+      context: ./backend
+    container_name: chhub-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CH_DB_URL: "jdbc:mysql://mysql:3306/chhub?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+      CH_DB_USER: chhub
+      CH_DB_PASSWORD: chhub_pwd
+      CH_REDIS_HOST: redis
+      CH_REDIS_PORT: "6379"
+      CH_JWT_SECRET: please-change-me-this-is-compose-default-very-long-secret-xyz
+    expose:
+      - "8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: chhub-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:
