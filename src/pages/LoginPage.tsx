@@ -96,29 +96,6 @@ export default function LoginPage() {
                 ? '登录后可收藏文章、发表评论、参与社区贡献'
                 : '免费注册，立即开始发表你的第一篇文章'}
             </p>
-
-            {backendUp === false && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: '10px 12px',
-                  background: 'rgba(184,136,36,0.08)',
-                  border: '1px solid rgba(184,136,36,0.3)',
-                  color: 'var(--warning)',
-                  borderRadius: 'var(--r-md)',
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                }}
-              >
-                检测不到后端服务。请在项目根目录启动：
-                <code style={{ display: 'block', marginTop: 6, fontFamily: 'var(--font-mono)' }}>
-                  cd backend &amp;&amp; mvn -DskipTests package
-                  <br />
-                  java -jar ch-web/target/ch-web.jar --spring.profiles.active=dev
-                </code>
-              </div>
-            )}
-
             <div className="login-tabs">
               <button
                 type="button"
