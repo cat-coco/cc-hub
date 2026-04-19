@@ -28,7 +28,7 @@ function RequireAdmin({ children }: { children: React.ReactNode }) {
   const { user, ready, isAdmin } = useAuthStore();
   if (!ready) return null;
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin()) return <Navigate to="/home" replace />;
+  if (!isAdmin()) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -55,8 +55,9 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<IndexPage />} />
-      <Route path="/home" element={<HomePage />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/home" element={<Navigate to="/" replace />} />
+      <Route path="/proto" element={<IndexPage />} />
       <Route path="/articles" element={<ArticlesPage />} />
       <Route path="/article" element={<ArticlePage />} />
       <Route path="/article/:slug" element={<ArticlePage />} />

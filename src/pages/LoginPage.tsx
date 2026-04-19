@@ -62,7 +62,7 @@ export default function LoginPage() {
           nickname: nickname.trim() || undefined,
         });
       }
-      navigate('/home');
+      navigate('/');
     } catch (e2) {
       console.error('[login]', e2);
       if (e2 instanceof ApiError) {

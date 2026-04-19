@@ -57,7 +57,7 @@ export default function AdminSidebar({ active }: { active?: string }) {
 
   return (
     <aside className="admin-aside">
-      <Link className="brand" to="/home">
+      <Link className="brand" to="/">
         <span className="brand-mark" />
         <span className="brand-name">ClaudeCode</span>
         <span className="brand-slash" style={{ color: 'var(--ink-4)', fontWeight: 400 }}>/</span>

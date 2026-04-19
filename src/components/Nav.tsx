@@ -3,7 +3,7 @@ import { IconSearch } from './Icon';
 import { useAuthStore } from '../store/auth';
 
 const LINKS = [
-  { to: '/home', key: 'home', label: '首页' },
+  { to: '/', key: 'home', label: '首页' },
   { to: '/articles', key: 'articles', label: '文章' },
   { to: '/cases', key: 'cases', label: '实战案例' },
   { to: '/snippets', key: 'snippets', label: 'Snippets' },
@@ -26,7 +26,7 @@ export default function Nav({ active }: NavProps) {
   return (
     <nav className="nav">
       <div className="nav-inner">
-        <Link className="brand" to="/home">
+        <Link className="brand" to="/">
           <span className="brand-mark" />
           <span className="brand-name">ClaudeCode</span>
           <span className="brand-slash">/</span>

@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="container">
         <div className="footer-inner">
           <div>
-            <Link className="brand" to="/home" style={{ marginBottom: 12 }}>
+            <Link className="brand" to="/" style={{ marginBottom: 12 }}>
               <span className="brand-mark" />
               <span className="brand-name">ClaudeCode</span>
               <span className="brand-slash">/</span>
@@ -39,8 +39,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <div>© 2026 ClaudeCode Hub · 沪 ICP 备 2026000000 号</div>
-          <div>原型演示 · Prototype preview</div>
+          <div>© 2026 ClaudeCode Hub · 赣ICP备2026007432号-1</div>
         </div>
       </div>
     </footer>
