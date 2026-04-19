@@ -46,7 +46,7 @@ export default function Nav({ active }: NavProps) {
         <div className="nav-spacer" />
         <Link className="nav-search" to="/search">
           <IconSearch />
-          <span>搜索文章、Snippets、工具…</span>
+          <span>搜索文章、工具…</span>
           <kbd>⌘K</kbd>
         </Link>
         {user ? (

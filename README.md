@@ -42,7 +42,7 @@ cc-hub/
 # 1. 后端
 cd backend
 mvn -DskipTests package
-java -jar ch-web/target/ch-web.jar --spring.profiles.active=dev
+java -jar ch-web/target/ch-web.jar --spring.profiles.active=prod
 # → http://localhost:8080  (Swagger UI 在 /swagger-ui.html)
 
 # 2. 前端（另开终端）
@@ -73,7 +73,7 @@ mysql -h <host> -uchhub -p chhub < db/schema-mysql.sql
 mysql -h <host> -uchhub -p chhub < db/seed-mysql.sql
 
 # 2. 启动后端
-export CH_DB_URL="jdbc:mysql://localhost:3306/chhub?..."
+export CH_DB_URL="jdbc:mysql://localhost:3306/chhub"
 export CH_DB_USER=chhub
 export CH_DB_PASSWORD=chhub_pwd
 java -jar ch-web/target/ch-web.jar --spring.profiles.active=prod

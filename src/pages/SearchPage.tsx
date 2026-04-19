@@ -55,7 +55,7 @@ export default function SearchPage() {
                 <circle cx="11" cy="11" r="7" />
                 <path d="m20 20-3.5-3.5" />
               </Icon>
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索文章、Snippets、工具…" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索文章、工具…" />
               <kbd>Enter</kbd>
             </div>
           </form>

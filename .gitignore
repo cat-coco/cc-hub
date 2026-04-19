@@ -26,3 +26,4 @@ backend/**/target/
 *.local
 .env
 .env.local
+.claude

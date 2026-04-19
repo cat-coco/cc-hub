@@ -12,7 +12,7 @@ spring:
       mode: never       # MySQL schema is provisioned out-of-band (docker-entrypoint-initdb.d / db/schema-mysql.sql)
   data:
     redis:
-      host: ${CH_REDIS_HOST:redis}
+      host: ${CH_REDIS_HOST:127.0.0.1}
       port: ${CH_REDIS_PORT:6379}
       password: ${CH_REDIS_PASSWORD:}
 
