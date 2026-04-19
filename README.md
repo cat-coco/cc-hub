@@ -76,6 +76,8 @@ mysql -h <host> -uchhub -p chhub < db/seed-mysql.sql
 export CH_DB_URL="jdbc:mysql://localhost:3306/chhub"
 export CH_DB_USER=chhub
 export CH_DB_PASSWORD=chhub_pwd
+export CH_REDIS_HOST=127.0.0.1
+export CH_REDIS_PORT=6379
 java -jar ch-web/target/ch-web.jar --spring.profiles.active=prod
 ```
 
