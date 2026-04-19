@@ -203,6 +203,14 @@ public class ArticleService {
                 .orderByDesc(ArticleVersion::getVersionNo));
     }
 
+    public ArticleVersion version(long articleId, int versionNo) {
+        ArticleVersion v = versionMapper.selectOne(new LambdaQueryWrapper<ArticleVersion>()
+                .eq(ArticleVersion::getArticleId, articleId)
+                .eq(ArticleVersion::getVersionNo, versionNo));
+        if (v == null) throw new BizException(404, "版本不存在");
+        return v;
+    }
+
     public List<ArticleListItem> hot(int limit) {
         Page<Article> p = new Page<>(1, limit);
         Page<Article> paged = articleMapper.selectPage(p, new LambdaQueryWrapper<Article>()
@@ -232,6 +240,8 @@ public class ArticleService {
         }
     }
 
+    private static final int MAX_VERSIONS_PER_ARTICLE = 10;
+
     private void snapshot(Article a, long editorId, String editorName, String changeSummary) {
         Long maxV = versionMapper.selectCount(new LambdaQueryWrapper<ArticleVersion>()
                 .eq(ArticleVersion::getArticleId, a.getId()));
@@ -245,11 +255,60 @@ public class ArticleService {
         v.setEditorName(editorName);
         v.setChangeSummary(changeSummary);
         versionMapper.insert(v);
+        pruneVersions(a.getId());
+    }
+
+    private void pruneVersions(long articleId) {
+        List<ArticleVersion> all = versionMapper.selectList(new LambdaQueryWrapper<ArticleVersion>()
+                .eq(ArticleVersion::getArticleId, articleId)
+                .orderByDesc(ArticleVersion::getVersionNo));
+        if (all.size() <= MAX_VERSIONS_PER_ARTICLE) return;
+        for (int i = MAX_VERSIONS_PER_ARTICLE; i < all.size(); i++) {
+            versionMapper.deleteById(all.get(i).getId());
+        }
     }
 
     // ===================================================================
     // Lifecycle transitions (batch 1)
     // ===================================================================
+
+    @Transactional
+    public ArticleDetail duplicate(long sourceId, long operatorId) {
+        Article src = articleMapper.selectById(sourceId);
+        if (src == null) throw new BizException(404, "源文章不存在");
+        Article copy = new Article();
+        copy.setAuthorId(operatorId);
+        copy.setTitle(src.getTitle() + "（副本）");
+        copy.setSubtitle(src.getSubtitle());
+        copy.setSlug(SlugUtils.slugify(src.getTitle()) + "-copy-" + System.currentTimeMillis() % 100000);
+        copy.setSummary(src.getSummary());
+        copy.setSummaryType(src.getSummaryType());
+        copy.setCoverImage(src.getCoverImage());
+        copy.setContentMd(src.getContentMd());
+        copy.setContentHtml(src.getContentHtml());
+        copy.setCategoryId(src.getCategoryId());
+        copy.setStatus(ArticleStatus.DRAFT.name());
+        copy.setIsFeatured(false);
+        copy.setIsTop(false);
+        copy.setViewCount(0); copy.setLikeCount(0); copy.setCommentCount(0); copy.setCollectCount(0);
+        copy.setReadTimeMinutes(src.getReadTimeMinutes());
+        copy.setLastEditorId(operatorId);
+        copy.setSeoTitle(src.getSeoTitle());
+        copy.setSeoDescription(src.getSeoDescription());
+        copy.setSeoKeywords(src.getSeoKeywords());
+        articleMapper.insert(copy);
+
+        // inherit tags
+        List<Tag> tags = articleTagMapper.findTagsByArticleId(sourceId);
+        for (Tag t : tags) {
+            ArticleTag at = new ArticleTag();
+            at.setArticleId(copy.getId());
+            at.setTagId(t.getId());
+            articleTagMapper.insert(at);
+        }
+        snapshot(copy, operatorId, null, "duplicated from #" + sourceId);
+        return findBySlugOrId(String.valueOf(copy.getId()));
+    }
 
     @Transactional
     public ArticleDetail submitReview(long id, long userId) {

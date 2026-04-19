@@ -6,8 +6,12 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import Icon from '../components/Icon';
 import RichEditor from '../components/RichEditor';
+import LockConflictModal from '../components/LockConflictModal';
 import { adminArticlesApi, articlesApi, categoriesApi } from '../api/endpoints';
 import { ApiError } from '../api/client';
+import { useAuthStore } from '../store/auth';
+import { useEditLock } from '../hooks/useEditLock';
+import { useAutoSave } from '../hooks/useAutoSave';
 import '../styles/admin-editor.css';
 import '../styles/tiptap.css';
 import 'highlight.js/styles/github.css';
@@ -87,14 +91,24 @@ export default function AdminEditorPage() {
   const editingId = id ? Number(id) : undefined;
   const navigate = useNavigate();
 
+  const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = (user?.roles ?? []).includes('ROLE_SUPER_ADMIN');
+
   const [mode, setMode] = useState<Mode>('split');
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [newTag, setNewTag] = useState('');
   const [err, setErr] = useState<string | null>(null);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
-  // auto-save to localStorage every 10s
-  const storageKey = useMemo(() => `cch.draft.${editingId ?? 'new'}`, [editingId]);
+  // edit lock for existing articles; no-op for /admin/editor (new article)
+  const lock = useEditLock({
+    articleId: editingId ? editingId + retryNonce * 0 : null,
+    currentUserId: user?.id ?? null,
+  });
+
+  // auto-save draft to localStorage every 10s; restore on mount for new posts
+  const autoSaveKey = useMemo(() => String(editingId ?? 'new'), [editingId]);
+  const { savedAt, restore, clear: clearAutoSave } = useAutoSave(autoSaveKey, draft, 10_000);
 
   useEffect(() => {
     document.body.classList.add('admin-editor-body');
@@ -123,21 +137,18 @@ export default function AdminEditorPage() {
         isTop: false,
       });
     } else if (!editingId) {
-      // Restore local draft on fresh new-post page
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        try { setDraft({ ...emptyDraft, ...JSON.parse(saved) }); } catch { /* empty */ }
+      const saved = restore();
+      if (saved?.value) {
+        const age = Math.round((Date.now() - saved.savedAt) / 60_000);
+        if (confirm(`检测到 ${age} 分钟前的本地草稿，是否恢复？`)) {
+          setDraft({ ...emptyDraft, ...saved.value });
+        } else {
+          clearAutoSave();
+        }
       }
     }
-  }, [existingQ.data, editingId, storageKey]);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      localStorage.setItem(storageKey, JSON.stringify(draft));
-      setSavedAt(new Date());
-    }, 10_000);
-    return () => clearInterval(t);
-  }, [draft, storageKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingQ.data, editingId]);
 
   const categoriesQ = useQuery({ queryKey: ['categories'], queryFn: categoriesApi.list });
 
@@ -159,7 +170,7 @@ export default function AdminEditorPage() {
       return editingId ? adminArticlesApi.update(editingId, req) : adminArticlesApi.create(req);
     },
     onSuccess: (a) => {
-      localStorage.removeItem(storageKey);
+      clearAutoSave();
       setErr(null);
       navigate(`/article/${a.slug}`);
     },
@@ -181,8 +192,41 @@ export default function AdminEditorPage() {
 
   const contentHtml = mdToBasicHtml(draft.contentMd);
 
+  const readOnly = lock.status.state === 'conflict' || lock.status.state === 'lost';
+
   return (
-    <div className="ed">
+    <div className="ed" onKeyDown={() => lock.touchActivity()} onMouseDown={() => lock.touchActivity()}>
+      {lock.status.state === 'conflict' && (
+        <LockConflictModal
+          info={lock.status.info}
+          canForceUnlock={isSuperAdmin}
+          onForceUnlock={async () => {
+            if (!editingId) return;
+            await adminArticlesApi.forceUnlock(editingId).catch(() => {});
+            setRetryNonce((n) => n + 1);
+            window.location.reload();
+          }}
+          onRetry={() => window.location.reload()}
+        />
+      )}
+      {lock.showIdlePrompt && (
+        <div
+          style={{
+            position: 'fixed', top: 80, right: 20, zIndex: 500,
+            width: 320, padding: 14,
+            background: 'var(--surface)', border: '1px solid var(--line)',
+            borderRadius: 'var(--r-md)', boxShadow: 'var(--shadow-2)',
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>你还在编辑吗？</div>
+          <div style={{ fontSize: 13, color: 'var(--ink-2)', marginBottom: 10 }}>
+            空闲已超过 5 分钟。若不续期，其他人可能抢走编辑权。
+          </div>
+          <button type="button" className="btn btn-primary btn-sm" onClick={lock.keepAlive}>
+            继续编辑
+          </button>
+        </div>
+      )}
       <div className="etop">
         <Link className="brand" to="/admin/dashboard">
           <span className="brand-mark" />
@@ -214,7 +258,7 @@ export default function AdminEditorPage() {
           <button
             type="button"
             className="btn btn-ghost btn-sm"
-            disabled={saveMut.isPending}
+            disabled={saveMut.isPending || readOnly}
             onClick={() => saveMut.mutate('DRAFT')}
           >
             {saveMut.isPending ? '保存中…' : '存为草稿'}
@@ -222,7 +266,7 @@ export default function AdminEditorPage() {
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            disabled={saveMut.isPending || !draft.title.trim()}
+            disabled={saveMut.isPending || readOnly || !draft.title.trim()}
             onClick={() => saveMut.mutate('PUBLISHED')}
           >
             {saveMut.isPending ? '发布中…' : '发布'}

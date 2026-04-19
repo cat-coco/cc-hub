@@ -37,13 +37,46 @@ export const articlesApi = {
   collect: (id: number) => post<{ collected: boolean; total: number }>(`/api/articles/${id}/collect`),
 };
 
+export interface LockInfo {
+  userId: number;
+  userName: string;
+  acquiredAt: string;
+  lastHeartbeatAt: string;
+}
+export interface LockResult { acquired: boolean; info: LockInfo | null }
+
+export interface ArticleVersionRow {
+  id: number;
+  articleId: number;
+  versionNo: number;
+  title: string;
+  contentMd?: string | null;
+  contentHtml?: string | null;
+  editorId: number;
+  editorName?: string | null;
+  changeSummary?: string | null;
+  createdAt: string;
+}
+
 export const adminArticlesApi = {
   create: (req: ArticleCreateReq) => post<ArticleDetail>('/api/admin/articles', req),
   update: (id: number, req: ArticleCreateReq) => put<ArticleDetail>(`/api/admin/articles/${id}`, req),
   remove: (id: number) => del<void>(`/api/admin/articles/${id}`),
-  versions: (id: number) => get<
-    { id: number; version: number; createdAt: string; editorId: number }[]
-  >(`/api/admin/articles/${id}/versions`),
+  versions: (id: number) => get<ArticleVersionRow[]>(`/api/admin/articles/${id}/versions`),
+  duplicate: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/duplicate`),
+  // lifecycle (batch 1)
+  submitReview: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/submit-review`),
+  approve: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/approve`),
+  reject: (id: number, remark: string) => post<ArticleDetail>(`/api/admin/articles/${id}/reject`, { remark }),
+  publish: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/publish`),
+  unpublish: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/unpublish`),
+  offline: (id: number) => post<ArticleDetail>(`/api/admin/articles/${id}/offline`),
+  // edit lock (batch 2)
+  acquireLock: (id: number) => post<LockResult>(`/api/admin/articles/${id}/acquire-lock`),
+  heartbeat: (id: number) => post<void>(`/api/admin/articles/${id}/heartbeat`),
+  releaseLock: (id: number) => post<void>(`/api/admin/articles/${id}/release-lock`),
+  forceUnlock: (id: number) => post<void>(`/api/admin/articles/${id}/force-unlock`),
+  peekLock: (id: number) => get<LockInfo | null>(`/api/admin/articles/${id}/lock`),
 };
 
 export const categoriesApi = {

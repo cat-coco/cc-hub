@@ -15,3 +15,15 @@ spring:
     console:
       enabled: true
       path: /h2
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+ch:
+  editlock:
+    backend: memory    # memory | redis ; dev default uses in-memory
+
+logging:
+  level:
+    com.claudecode.hub: DEBUG

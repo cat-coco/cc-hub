@@ -26,6 +26,7 @@
         <module>ch-qa</module>
         <module>ch-stats</module>
         <module>ch-notification</module>
+        <module>ch-admin</module>
         <module>ch-web</module>
     </modules>
 
@@ -82,6 +83,11 @@
             <dependency>
                 <groupId>com.claudecode.hub</groupId>
                 <artifactId>ch-notification</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.claudecode.hub</groupId>
+                <artifactId>ch-admin</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

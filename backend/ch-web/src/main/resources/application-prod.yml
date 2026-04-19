@@ -17,3 +17,7 @@ spring:
       host: ${CH_REDIS_HOST:redis}
       port: ${CH_REDIS_PORT:6379}
       password: ${CH_REDIS_PASSWORD:}
+
+ch:
+  editlock:
+    backend: redis
