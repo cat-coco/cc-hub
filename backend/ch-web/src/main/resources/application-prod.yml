@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${CH_DB_URL:jdbc:mysql://mysql:3306/chhub?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    url: ${CH_DB_URL:jdbc:mysql://mysql:3306/chhub?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
     username: ${CH_DB_USER:chhub}
     password: ${CH_DB_PASSWORD:chhub_pwd}
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -57,7 +57,7 @@ services:
     image: rabbitmq:3.13-management
     container_name: chhub-rabbitmq
     restart: unless-stopped
-    profiles: ["embedded"]
+    profiles: ["embedded", "rabbitmq"]
     environment:
       RABBITMQ_DEFAULT_USER: ${CH_DB_USER:-chhub}
       RABBITMQ_DEFAULT_PASS: ${CH_DB_PASSWORD:-chhub_pwd}
@@ -84,7 +84,7 @@ services:
         required: false
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      CH_DB_URL: "jdbc:mysql://${CH_DB_HOST:-mysql}:${CH_DB_PORT:-3306}/${CH_DB_NAME:-chhub}?useUnicode=true&characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
+      CH_DB_URL: "jdbc:mysql://${CH_DB_HOST:-mysql}:${CH_DB_PORT:-3306}/${CH_DB_NAME:-chhub}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
       CH_DB_USER: ${CH_DB_USER:-chhub}
       CH_DB_PASSWORD: ${CH_DB_PASSWORD:-chhub_pwd}
       CH_REDIS_HOST: ${CH_REDIS_HOST:-redis}
