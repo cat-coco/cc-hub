@@ -91,8 +91,12 @@ services:
       CH_REDIS_PORT: ${CH_REDIS_PORT:-6379}
       CH_REDIS_PASSWORD: ${CH_REDIS_PASSWORD:-}
       CH_JWT_SECRET: ${CH_JWT_SECRET:-please-change-me-this-is-compose-default-very-long-secret-xyz}
-    expose:
-      - "8080"
+    # Publish backend to host so `npm run dev` (Vite dev server on :5173) can
+    # proxy /api to http://localhost:${CH_BACKEND_PORT:-8080}. The `web`
+    # nginx container reaches it over the compose network (service name),
+    # not via this host binding.
+    ports:
+      - "${CH_BACKEND_PORT:-8080}:8080"
 
   web:
     build:

@@ -67,6 +67,8 @@ docker compose up -d --build
 
 首次启动 MySQL 会自动执行 `db/schema-mysql.sql` + `db/seed-mysql.sql`。
 
+> **前端本地热更新（可选）**：`docker compose up` 会把 backend 发布到 host 的 `${CH_BACKEND_PORT:-8080}`；此时另开一个终端跑 `npm run dev` 就能用 Vite 热更新，`/api` 由 Vite 代理到 `127.0.0.1:8080`。
+
 ### 方式 C：Docker Compose + 外部 MySQL / Redis
 
 编辑 `.env`：
