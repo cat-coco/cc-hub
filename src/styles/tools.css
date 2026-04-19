@@ -1,0 +1,24 @@
+.tools-head { padding: 56px 0 32px; border-bottom: 1px solid var(--line); margin-bottom: 40px; }
+.tools-head h1 { font-size: var(--fs-40); margin: 0; letter-spacing: -0.02em; font-weight: 600; }
+.tools-head p { color: var(--ink-3); margin: 8px 0 0; font-size: var(--fs-15); max-width: 640px; }
+.tools-filters { display: flex; gap: 8px; margin-top: 24px; flex-wrap: wrap; }
+
+.tools-sec-h { margin: 56px 0 20px; display: flex; align-items: baseline; gap: 12px; }
+.tools-sec-h h2 { margin: 0; font-size: var(--fs-22); font-weight: 600; letter-spacing: -0.01em; }
+.tools-sec-h .cnt { font-family: var(--font-mono); color: var(--ink-4); font-size: 13px; }
+.tools-sec-h .more { margin-left: auto; font-size: 13px; color: var(--brand); }
+
+.tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.tool { padding: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); display: flex; gap: 14px; transition: all var(--dur) var(--ease); text-decoration: none; color: inherit; }
+.tool:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--line-2); }
+.tool-ico { width: 44px; height: 44px; border-radius: var(--r-md); background: var(--brand-subtle); color: var(--brand); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: var(--font-mono); font-size: 16px; font-weight: 600; }
+.tool-b { flex: 1; min-width: 0; }
+.tool-name { display: flex; align-items: baseline; gap: 8px; }
+.tool-name h3 { margin: 0; font-size: var(--fs-15); font-weight: 600; letter-spacing: -0.01em; }
+.tool-name .ver { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+.tool-desc { font-size: var(--fs-13); color: var(--ink-3); line-height: 1.55; margin: 6px 0 10px; }
+.tool-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.tool-foot { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--ink-3); font-family: var(--font-mono); }
+.tool-foot .sp { flex: 1; }
+.tool-arr { color: var(--ink-4); transition: color var(--dur); }
+.tool:hover .tool-arr { color: var(--brand); }
